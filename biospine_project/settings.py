@@ -183,6 +183,11 @@ _default_from = os.getenv("EMAIL_HOST_USER", "") if EMAIL_HOST else ""
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL") or (f"{SITE_NAME} <{_default_from}>" if "@" in _default_from else f"{SITE_NAME} <no-reply@localhost>")
 EMAIL_TIMEOUT = 10
 EMAIL_CONFIGURED = bool(EMAIL_HOST)       # False = emails are only printed in the server log (local testing)
+# Render's free plan blocks SMTP ports, so on Render send through Brevo's HTTPS API instead (takes priority over SMTP).
+BREVO_API_KEY = os.getenv("BREVO_API_KEY", "").strip()
+if BREVO_API_KEY:
+    EMAIL_BACKEND = "biospine_app.email_backends.BrevoEmailBackend"
+    EMAIL_CONFIGURED = True
 
 # --------------------------------------------------------------------------
 # AI (Google Gemini) + abuse limits
