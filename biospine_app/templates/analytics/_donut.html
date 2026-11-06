@@ -1,0 +1,6 @@
+{% if d %}
+<div class="donut-box">
+  <svg viewBox="0 0 100 100" class="donut" role="img" aria-label="Circle diagram"><g transform="rotate(-90 50 50)">{% for g in d.segs %}<circle cx="50" cy="50" r="{{ d.r }}" fill="none" stroke="{{ g.color }}" stroke-width="15" stroke-dasharray="{{ g.dash }}" stroke-dashoffset="{{ g.offset }}"/>{% endfor %}</g>{% if d.center %}<text x="50" y="55" text-anchor="middle" class="donut-t">{{ d.center }}</text>{% endif %}</svg>
+  <ul class="donut-legend">{% for g in d.segs %}<li><i style="background:{{ g.color }}"></i>{{ g.label }}: <b>{{ g.value }}</b> ({{ g.pct }}%)</li>{% endfor %}</ul>
+</div>
+{% endif %}

@@ -1,0 +1,17 @@
+{% extends "pages/base.html" %}
+{% block title %}Contact{% endblock %}
+{% block desc %}Contact the {{ SITE_NAME }} team: questions, feedback, privacy requests.{% endblock %}
+{% block content %}
+<div class="card narrow"><h1>Contact us</h1>
+{% if sent %}<p class="okmsg">Thank you! Your message was sent. We'll reply by email.</p>
+{% else %}
+<p class="hint">Questions, feedback, bug reports or privacy requests (access / deletion).{% if CONTACT_EMAIL %} You can also write to <b>{{ CONTACT_EMAIL }}</b>.{% endif %}</p>
+{% if error %}<p class="err">{{ error }}</p>{% endif %}
+<form method="post">{% csrf_token %}
+<label>Your name<input name="name" maxlength="120" required></label>
+<label>Your email<input type="email" name="email" maxlength="254" required></label>
+<label>Message<textarea name="message" rows="6" maxlength="4000" required></textarea></label>
+<input type="text" name="website" tabindex="-1" autocomplete="off" class="hp" aria-hidden="true">
+<button class="btn" type="submit">Send message</button></form>
+{% endif %}</div>
+{% endblock %}

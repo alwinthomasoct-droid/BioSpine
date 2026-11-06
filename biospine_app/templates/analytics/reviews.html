@@ -1,0 +1,28 @@
+{% extends "analytics/base.html" %}
+{% block title %}Client reviews · BioSpine Analytics{% endblock %}
+{% block content %}
+<h2 style="margin-top:6px">Client reviews</h2>
+<div class="card">
+  <p style="margin:0">{{ stats.total }} review(s), average <b>{{ stats.average|default_if_none:"–" }}</b>{% if stats.average %} ★{% endif %}.
+  <b>{{ stats.shown }}</b> are shown on the public home page. You decide which ones: press <b>Show on home page</b> next to a review (press <b>Hide</b> to take it down again).
+  Visitors only see the star rating, the comment and the name the client chose, never the email.</p>
+</div>
+<div class="card scroll" style="margin-top:12px"><table>
+<tr><th>Date</th><th>Stars</th><th>Name shown</th><th>Comment</th><th>Client</th><th>On home page?</th></tr>
+{% for r in reviews %}
+<tr>
+  <td>{{ r.created_at|date:"Y-m-d" }}</td>
+  <td>{% for i in "12345" %}{% if forloop.counter <= r.rating %}★{% else %}☆{% endif %}{% endfor %}</td>
+  <td>{{ r.display_name }}</td>
+  <td style="white-space:normal;min-width:260px">{{ r.comment|default:"–" }}</td>
+  <td><a href="{% url 'analytics_user' r.user_id %}">{{ r.user.email }}</a></td>
+  <td>
+    <form method="post" action="{% url 'analytics_review_toggle' r.id %}">{% csrf_token %}
+      {% if r.show_on_home %}<span class="pill s-active">shown</span> <input type="hidden" name="show" value="0"><button>Hide</button>
+      {% else %}<span class="pill s-never">hidden</span> <input type="hidden" name="show" value="1"><button>Show on home page</button>{% endif %}
+    </form>
+  </td>
+</tr>
+{% empty %}<tr><td colspan="6" class="mut">No reviews yet. Clients are asked once, after their 5th saved session.</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

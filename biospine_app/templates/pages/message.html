@@ -1,0 +1,6 @@
+{% extends "pages/base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="card center"><div class="big {% if ok %}ok{% else %}bad{% endif %}">{% if ok %}✓{% else %}!{% endif %}</div>
+<h1>{{ title }}</h1><p>{{ text }}</p><p><a class="btn" href="/">Back to {{ SITE_NAME }}</a></p></div>
+{% endblock %}

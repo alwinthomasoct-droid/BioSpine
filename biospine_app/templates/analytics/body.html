@@ -1,0 +1,43 @@
+{% extends "analytics/base.html" %}
+{% block title %}Body &amp; BMI · BioSpine Analytics{% endblock %}
+{% block content %}
+<h2>Height, weight and BMI of your users</h2>
+<div class="grid k">
+  <div class="card kpi"><b>{{ stats.with_body }} / {{ stats.total }}</b><span>Users who gave height &amp; weight</span></div>
+  <div class="card kpi"><b>{{ stats.avg_height|default_if_none:"–" }}{% if stats.avg_height %} cm{% endif %}</b><span>Average height</span></div>
+  <div class="card kpi"><b>{{ stats.avg_weight|default_if_none:"–" }}{% if stats.avg_weight %} kg{% endif %}</b><span>Average weight</span></div>
+  <div class="card kpi"><b>{{ stats.avg_bmi|default_if_none:"–" }}</b><span>Average BMI</span></div>
+</div>
+
+<div class="grid g2" style="margin-top:12px">
+  <div class="card"><canvas id="cBands"></canvas></div>
+  <div class="card"><canvas id="cHist"></canvas></div>
+</div>
+
+<h2>Does body size relate to posture?</h2>
+<div class="card scroll"><table>
+  <tr><th>BMI group</th><th>Users</th><th>Share</th><th>Avg compliance %</th><th>Avg lean (°)</th><th>Avg sessions</th><th>Avg hours worn</th></tr>
+  {% for b in stats.bands %}<tr><td><span class="pill b-{{ b.key }}">{{ b.label }}</span></td><td>{{ b.users }}</td><td>{{ b.pct }}%</td><td>{{ b.avg_compliance|default_if_none:"–" }}</td><td>{{ b.avg_dev|default_if_none:"–" }}</td><td>{{ b.avg_sessions|default_if_none:"–" }}</td><td>{{ b.avg_hours|default_if_none:"–" }}</td></tr>{% endfor %}
+</table></div>
+<div class="card" style="margin-top:12px"><canvas id="cScatter"></canvas><div class="note">Each dot is one user (BMI against average compliance). Look for patterns, but remember it is only a handful of people at first and BMI is a rough guide for adults, not a medical measure.</div></div>
+
+{% if stats.missing %}
+<h2>Missing height / weight ({{ stats.missing }})</h2>
+<div class="card scroll"><table>
+  <tr><th>User</th><th>Joined</th></tr>
+  {% for r in missing %}<tr><td><a href="{% url 'analytics_user' r.id %}?tz={{ tzname }}">{{ r.email }}</a></td><td>{{ r.created_at|date:"Y-m-d" }}</td></tr>{% endfor %}
+</table><div class="note">Older accounts can add their measurements in the app: Settings → My body. New sign-ups are asked on the sign-up form.</div></div>
+{% endif %}
+
+{{ chart|json_script:"d-chart" }}
+<script>
+window.BS_PAGE = function () {
+  var d = BS.json('d-chart'), C = BS.c;
+  BS.chart('cBands', 'doughnut', {labels: d.bands.map(function (b) { return b.label; }), datasets: [{data: d.bands.map(function (b) { return b.users; }), backgroundColor: [C.blue, C.green, C.amber, C.red]}]}, 'BMI groups');
+  BS.chart('cHist', 'bar', {labels: d.hist.map(function (b) { return b.label; }), datasets: [{label: 'Users', data: d.hist.map(function (b) { return b.count; }), backgroundColor: C.violet}]}, 'BMI spread');
+  BS.chart('cScatter', 'scatter', {datasets: [{label: 'Users', data: d.scatter, backgroundColor: C.blue}]}, 'BMI vs average compliance %',
+    {scales: {x: {title: {display: true, text: 'BMI'}}, y: {title: {display: true, text: 'Compliance %'}, min: 0, max: 100}},
+     plugins: {tooltip: {callbacks: {label: function (c) { return c.raw.email + ': BMI ' + c.raw.x + ', ' + c.raw.y + '%'; }}}}});
+};
+</script>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "analytics/base.html" %}
+{% block title %}Engagement · BioSpine Analytics{% endblock %}
+{% block content %}
+<h2>Do people come back?</h2>
+<div class="grid k">
+  <div class="card kpi"><b>{{ kpi.dau }} / {{ kpi.wau }} / {{ kpi.mau }}</b><span>Active today / 7 days / 30 days</span></div>
+  <div class="card kpi"><b>{{ stickiness|default_if_none:"–" }}{% if stickiness is not None %}%{% endif %}</b><span>Stickiness (average daily users ÷ monthly users)</span></div>
+  <div class="card kpi"><b>{{ returning_pct|default_if_none:"–" }}{% if returning_pct is not None %}%{% endif %}</b><span>Of users with a session, came back on another day</span></div>
+  <div class="card kpi"><b>{{ avg_sessions|default_if_none:"–" }}</b><span>Average sessions per active user</span></div>
+  <div class="card kpi"><b>{{ kpi.activation_rate }}%</b><span>Activation (signed up → first session)</span></div>
+</div>
+
+<h2>Where people drop off</h2>
+<div class="card">
+  {% for f in funnel %}<div class="bar-row"><span>{{ f.label }}</span><div class="track"><i style="width:{{ f.pct }}%"></i></div><b>{{ f.count }} <span class="mut">({{ f.pct }}%)</span></b></div>{% endfor %}
+  <div class="note">Each bar is the share of everyone who signed up. A big step down shows where to improve (e.g. email confirmation, connecting the device, the first week).</div>
+</div>
+
+<h2>Activity and retention</h2>
+<div class="grid g2">
+  <div class="card"><canvas id="cActive"></canvas></div>
+  <div class="card"><canvas id="cPerUser"></canvas></div>
+</div>
+<div class="grid g2" style="margin-top:12px">
+  <div class="card"><canvas id="cStatus"></canvas></div>
+  <div class="card"><canvas id="cSign"></canvas></div>
+</div>
+
+<h2>Weekly retention (% of each sign-up week that wore it again)</h2>
+<div class="card scroll"><table>
+  <tr><th>Sign-up week</th><th>Users</th>{% for c in cohort_cols %}<th>Week {{ c }}</th>{% endfor %}</tr>
+  {% for row in cohorts %}<tr><td>{{ row.cohort }}</td><td>{{ row.size }}</td>{% for v in row.weeks %}<td>{% if v is None %}<span class="mut">·</span>{% else %}{{ v }}%{% endif %}</td>{% endfor %}</tr>
+  {% empty %}<tr><td colspan="10" class="mut">No sign-ups in the last 8 weeks.</td></tr>{% endfor %}
+</table></div>
+<div class="note">Week 0 is the week they signed up. Higher numbers further right mean people keep using BioSpine.</div>
+
+<h2>Going quiet - worth a nudge</h2>
+<div class="card scroll"><table>
+  <tr><th>User</th><th>Last active</th><th>Sessions</th><th>Best streak</th></tr>
+  {% for r in at_risk %}<tr><td><a href="{% url 'analytics_user' r.id %}?tz={{ tzname }}">{{ r.email }}</a></td><td>{{ r.last_active|date:"Y-m-d" }}</td><td>{{ r.sessions }}</td><td>{{ r.longest_streak }}</td></tr>{% empty %}<tr><td colspan="4" class="mut">Nobody is at risk right now.</td></tr>{% endfor %}
+</table></div>
+
+{{ chart|json_script:"d-chart" }}{{ per_user|json_script:"d-per" }}{{ status|json_script:"d-status" }}
+<script>
+window.BS_PAGE = function () {
+  var d = BS.json('d-chart'), per = BS.json('d-per'), s = BS.json('d-status'), C = BS.c;
+  BS.chart('cActive', 'line', {labels: d.daily.map(function (r) { return r.date.slice(5); }), datasets: [
+    {label: 'Active users', data: d.daily.map(function (r) { return r.users; }), borderColor: C.amber, tension: .3},
+    {label: 'Sessions', data: d.daily.map(function (r) { return r.sessions; }), borderColor: C.blue, tension: .3}]}, 'Daily active users and sessions (30 days)');
+  BS.chart('cPerUser', 'bar', {labels: per.map(function (r) { return r.label; }), datasets: [{label: 'Users', data: per.map(function (r) { return r.count; }), backgroundColor: C.violet}]}, 'How many sessions each user has recorded');
+  BS.chart('cStatus', 'doughnut', {labels: ['Active', 'At risk', 'Dormant', 'Never started'], datasets: [{data: [s.active, s.at_risk, s.dormant, s.never], backgroundColor: [C.green, C.amber, C.red, C.slate]}]}, 'User lifecycle');
+  BS.chart('cSign', 'bar', {labels: d.signups.map(function (r) { return r.date.slice(5); }), datasets: [{label: 'New sign-ups', data: d.signups.map(function (r) { return r.signups; }), backgroundColor: C.green}]}, 'New sign-ups per day');
+};
+</script>
+{% endblock %}

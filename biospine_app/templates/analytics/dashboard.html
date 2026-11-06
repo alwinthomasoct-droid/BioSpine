@@ -1,0 +1,70 @@
+{% extends "analytics/base.html" %}
+{% block title %}Overview · BioSpine Analytics{% endblock %}
+{% block content %}
+<form class="f" method="get">
+  <input type="hidden" name="tz" value="{{ tzname }}">
+  <span class="mut">Charts show the last</span>
+  <select name="days" onchange="this.form.submit()">
+    <option value="7" {% if days == 7 %}selected{% endif %}>7 days</option><option value="14" {% if days == 14 %}selected{% endif %}>14 days</option>
+    <option value="30" {% if days == 30 %}selected{% endif %}>30 days</option><option value="60" {% if days == 60 %}selected{% endif %}>60 days</option>
+    <option value="90" {% if days == 90 %}selected{% endif %}>90 days</option></select>
+  <span class="mut">· times in {{ tzname }}</span>
+</form>
+
+<h2>The numbers that matter</h2>
+<div class="grid k">
+  <div class="card kpi"><b>{{ kpi.total_users }}</b><span>Registered users · {{ kpi.new_users_7d }} new this week</span></div>
+  <div class="card kpi"><b>{{ kpi.users_with_sessions }}</b><span>Recorded a session · {{ kpi.activation_rate }}% of users</span></div>
+  <div class="card kpi"><b>{{ kpi.dau }} / {{ kpi.wau }} / {{ kpi.mau }}</b><span>Active today / 7 days / 30 days</span></div>
+  <div class="card kpi"><b>{{ kpi.total_sessions }}</b><span>Sessions · average {{ kpi.avg_session }}</span></div>
+  <div class="card kpi"><b>{{ kpi.total_hours }} h</b><span>Total wear time</span></div>
+  <div class="card kpi"><b>{{ kpi.avg_compliance|default_if_none:"–" }}%</b><span>Average posture compliance</span></div>
+  <div class="card kpi"><b>{{ kpi.avg_deviation|default_if_none:"–" }}°</b><span>Average forward lean</span></div>
+  <div class="card kpi"><b>{{ kpi.total_alerts }}</b><span>Slouch alerts in total</span></div>
+  <div class="card kpi"><b>{{ review_stats.average|default_if_none:"–" }}{% if review_stats.average %} ★{% endif %}</b><span>{{ review_stats.total }} reviews · {{ review_stats.shown }} on home page · <a href="{% url 'analytics_reviews' %}?tz={{ tzname }}">manage</a></span></div>
+</div>
+
+<h2>Activity</h2>
+<div class="grid g2">
+  <div class="card"><canvas id="cDaily"></canvas></div>
+  <div class="card"><canvas id="cSign"></canvas></div>
+</div>
+<div class="grid g3" style="margin-top:12px">
+  <div class="card"><canvas id="cStatus"></canvas><div class="note">Active = a session in the last 7 days · At risk = 8-30 days of silence · Dormant = longer · Never = signed up but no session.</div></div>
+  <div class="card"><canvas id="cModes"></canvas></div>
+  <div class="card"><b>Jump to</b>
+    <p><a href="{% url 'analytics_users' %}?tz={{ tzname }}">👥 Users</a> <span class="mut">- every profile and its full report</span></p>
+    <p><a href="{% url 'analytics_engagement' %}?tz={{ tzname }}">🔁 Engagement</a> <span class="mut">- funnel &amp; retention</span></p>
+    <p><a href="{% url 'analytics_posture' %}?tz={{ tzname }}">🧍 Posture quality</a> <span class="mut">- compliance &amp; deviation</span></p>
+    <p><a href="{% url 'analytics_time' %}?tz={{ tzname }}">🕒 Time patterns</a> <span class="mut">- hours &amp; weekdays</span></p>
+    <p><a href="{% url 'analytics_body' %}?tz={{ tzname }}">⚖ Body &amp; BMI</a> <span class="mut">- height / weight insights</span></p>
+    <p><a href="{% url 'analytics_reports' %}?tz={{ tzname }}">📄 Reports</a> <span class="mut">- Excel / PDF / CSV</span></p>
+  </div>
+</div>
+
+<h2>People to look at</h2>
+<div class="grid g3">
+  <div class="card"><b>⚠ Going quiet</b> <span class="mut">(8-30 days without a session)</span>
+    <table>{% for r in attention %}<tr><td><a href="{% url 'analytics_user' r.id %}?tz={{ tzname }}">{{ r.email }}</a></td><td class="mut">{{ r.last_active|date:"Y-m-d" }}</td></tr>{% empty %}<tr><td class="mut">Nobody right now 🎉</td></tr>{% endfor %}</table></div>
+  <div class="card"><b>🏆 Best posture</b> <span class="mut">(3+ sessions)</span>
+    <table>{% for r in stars %}<tr><td><a href="{% url 'analytics_user' r.id %}?tz={{ tzname }}">{{ r.email }}</a></td><td>{{ r.avg_compliance }}%</td></tr>{% empty %}<tr><td class="mut">Not enough data yet</td></tr>{% endfor %}</table></div>
+  <div class="card"><b>🆕 Newest sign-ups</b>
+    <table>{% for r in newest %}<tr><td><a href="{% url 'analytics_user' r.id %}?tz={{ tzname }}">{{ r.email }}</a></td><td class="mut">{{ r.created_at|date:"Y-m-d" }}</td></tr>{% empty %}<tr><td class="mut">No users yet</td></tr>{% endfor %}</table></div>
+</div>
+
+{{ chart|json_script:"d-chart" }}
+<script>
+window.BS_PAGE = function () {
+  var d = BS.json('d-chart'), C = BS.c;
+  BS.chart('cDaily', 'bar', {labels: d.daily.map(function (r) { return r.date.slice(5); }), datasets: [
+    {label: 'Sessions', data: d.daily.map(function (r) { return r.sessions; }), backgroundColor: 'rgba(56,189,248,.55)'},
+    {label: 'Active users', data: d.daily.map(function (r) { return r.users; }), type: 'line', borderColor: C.amber, tension: .3},
+    {label: 'Avg compliance %', data: d.daily.map(function (r) { return r.compliance; }), type: 'line', borderColor: C.green, yAxisID: 'y1', tension: .3}]},
+    'Daily sessions, active users and compliance', {scales: {y1: BS.right(0, 100)}});
+  BS.chart('cSign', 'line', {labels: d.signups.map(function (r) { return r.date.slice(5); }), datasets: [{label: 'New sign-ups', data: d.signups.map(function (r) { return r.signups; }), borderColor: C.violet, fill: true, backgroundColor: 'rgba(167,139,250,.15)', tension: .3}]}, 'New sign-ups per day');
+  var s = d.status;
+  BS.chart('cStatus', 'doughnut', {labels: ['Active', 'At risk', 'Dormant', 'Never started'], datasets: [{data: [s.active, s.at_risk, s.dormant, s.never], backgroundColor: [C.green, C.amber, C.red, C.slate]}]}, 'User lifecycle');
+  BS.chart('cModes', 'doughnut', {labels: d.modes.map(function (m) { return m.mode; }), datasets: [{data: d.modes.map(function (m) { return m.users; }), backgroundColor: [C.blue, C.violet, C.pink, C.amber]}]}, 'Mode people chose');
+};
+</script>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "pages/base.html" %}
+{% block title %}Privacy Policy{% endblock %}
+{% block content %}
+<article class="card doc"><h1>Privacy Policy</h1><p class="hint">Last updated: 7 October 2026</p>
+<!-- REVIEW: plain-language template matching what this software actually stores. Have it reviewed by a qualified lawyer for your country (e.g. India's DPDP Act 2023, EU/UK GDPR) before relying on it. -->
+<p>{{ SITE_NAME }} is run by {{ OPERATOR_NAME }}. This page explains what we collect, why, who sees it, and your choices.</p>
+
+<h2>What we collect</h2>
+<ul>
+<li><b>Account:</b> your email address and a salted hash of your password (we never store the password itself), the date you joined, and whether you confirmed your email.</li>
+<li><b>Posture data:</b> for each monitoring session - the date, duration, compliance score, number of alerts and average forward-tilt angle. Raw sensor streams stay in your browser and are not uploaded.</li>
+<li><b>Body measurements:</b> the height and weight you enter at sign-up or in Settings, used only to show your BMI. You can change them any time or delete your account. BMI is a rough guide for adults and is not a medical assessment.</li>
+<li><b>Reviews:</b> if you write a review, its stars, comment and the name you chose. It appears on the public home page only if the operator approves it (your email is never shown).</li>
+<li><b>Settings:</b> warning angle, tolerance, mode, daily goal, weekly-email preference, and your day streak.</li>
+<li><b>AI conversations:</b> the questions you ask the AI Physio, its answers, and a small snapshot of your live posture at that moment.</li>
+<li><b>Messages</b> you send through the contact form.</li>
+<li><b>Technical data:</b> your IP address and device type appear briefly in server logs and are used for security and rate limiting (for example, to stop password guessing).</li>
+</ul>
+
+<h2>Why we use it</h2>
+<p>To run your account, show your history and trends, provide AI guidance, send account emails (confirmation, password reset) and - if you leave it switched on - a weekly progress report, keep the service secure, and understand overall usage so we can improve it. We do <b>not</b> sell your data and we do not use advertising trackers.</p>
+
+<h2>Who can see it</h2>
+<ul>
+<li><b>Staff:</b> the operators can view account and usage data (including AI conversations) in an admin area, only when needed to run, secure, support and improve the service.</li>
+<li><b>Google (Gemini):</b> when you use the AI features, your question and a summary of your posture numbers are sent to Google's Gemini API to generate an answer. We do not send your email address. Google's own terms and privacy policy apply to that processing.</li>
+<li><b>Service providers:</b> hosting, database and email-delivery providers process data on our behalf to run the service.</li>
+<li>We may disclose data if the law requires it.</li>
+</ul>
+
+<h2>Cookies and local storage</h2>
+<p>We use your browser's local storage (not tracking cookies) to keep you signed in, remember settings, and keep your session history on your device. These are strictly necessary for the app to work. We do not use analytics or advertising cookies.</p>
+
+<h2>How long we keep it</h2>
+<p>Until you delete your account. Deleting your account (Settings → Account &amp; privacy) permanently removes your profile, sessions, AI conversations and sign-in tokens from our database; routine backups are overwritten on their normal schedule.</p>
+
+<h2>Your choices and rights</h2>
+<ul>
+<li><b>Download</b> a copy of your data (Settings → Account &amp; privacy → Download my data).</li>
+<li><b>Delete</b> your account and data at any time, instantly, in the same place.</li>
+<li><b>Delete individual AI chats</b> from the Chats &amp; Doubts tab.</li>
+<li><b>Unsubscribe</b> from the weekly email via the link in any email or in Settings.</li>
+<li>Ask us to correct or explain your data through the <a href="{% url 'contact' %}">contact form</a>. Depending on where you live (for example India, the EU or the UK) you may have further legal rights, including to complain to your data-protection authority.</li>
+</ul>
+
+<h2>Security</h2>
+<p>Passwords are stored as salted hashes, sign-in tokens are stored hashed and expire, traffic is encrypted with HTTPS, and sign-in and AI requests are rate-limited. No system is perfectly secure; if we learn of a breach affecting you we will tell you as the law requires.</p>
+
+<h2>Children</h2><p>The Service is not intended for children under 16.</p>
+<h2>Changes</h2><p>If this policy changes we will update the date above.</p>
+<p><a href="{% url 'disclaimer' %}">Health &amp; AI Disclaimer</a> · <a href="{% url 'terms' %}">Terms of Use</a></p></article>
+{% endblock %}

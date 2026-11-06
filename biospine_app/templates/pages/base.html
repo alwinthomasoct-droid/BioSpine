@@ -1,0 +1,23 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#070d18">
+<title>{% block title %}{{ SITE_NAME }}{% endblock %} · {{ SITE_NAME }}</title>
+<meta name="description" content="{% block desc %}{{ SITE_NAME }} - smart posture coaching{% endblock %}">
+<link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon-32.png' %}">
+<link rel="shortcut icon" href="{% static 'img/favicon.ico' %}">
+<link rel="stylesheet" href="{% static 'pages.css' %}">
+</head>
+<body>
+<header class="pg-head"><a class="pg-brand" href="/"><img src="{% static 'img/logo.png' %}" alt="BioSpine logo" width="34" height="34" style="border-radius:8px;vertical-align:middle"> {{ SITE_NAME }}</a>
+<nav><a href="/">App</a><a href="{% url 'privacy' %}">Privacy</a><a href="{% url 'terms' %}">Terms</a><a href="{% url 'contact' %}">Contact</a></nav></header>
+<main class="pg-main">{% block content %}{% endblock %}</main>
+<footer class="pg-foot">
+  <a href="{% url 'privacy' %}">Privacy Policy</a> · <a href="{% url 'terms' %}">Terms of Use</a> ·
+  <a href="{% url 'disclaimer' %}">Health Disclaimer</a> · <a href="{% url 'contact' %}">Contact</a>
+  <p>© {% now "Y" %} {{ OPERATOR_NAME }}. {{ SITE_NAME }} is a wellness tool, not a medical device.</p>
+</footer>
+</body>
+</html>

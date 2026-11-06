@@ -1,0 +1,28 @@
+# Render "Blueprint": click New -> Blueprint and point it at your GitHub repo.
+services:
+  - type: web
+    name: biospine
+    runtime: python
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn biospine_project.wsgi:application --workers 2 --timeout 60"
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: SITE_URL
+        sync: false          # e.g. https://biospine.onrender.com  (or your own domain)
+      - key: DATABASE_URL
+        sync: false          # paste the connection string of your PostgreSQL database
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: CONTACT_EMAIL
+        sync: false
+      - key: OPERATOR_NAME
+        sync: false
+      - key: CRON_SECRET
+        generateValue: true

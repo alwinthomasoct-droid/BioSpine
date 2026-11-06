@@ -1,0 +1,66 @@
+{% extends "analytics/base.html" %}
+{% block title %}Users · BioSpine Analytics{% endblock %}
+{% block content %}
+<style>
+.ucard{display:flex;flex-direction:column;gap:10px;color:var(--txt);transition:transform .15s,border-color .15s}
+.ucard:hover{text-decoration:none;transform:translateY(-3px);border-color:var(--acc)}
+.ucard .head{display:flex;gap:10px;align-items:center}.ucard .em{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ucard .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center}.ucard .stats b{display:block;font-size:16px}.ucard .stats span{font-size:10.5px;color:var(--mut)}
+.ucard .foot{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:var(--mut)}
+.view-cards #userTable{display:none}.view-table #userCards{display:none}
+.spark{width:96px;height:26px}.spark polyline{fill:none;stroke:var(--acc);stroke-width:2;stroke-linejoin:round}
+</style>
+<form class="f" method="get">
+  <input type="hidden" name="tz" value="{{ tzname }}"><input type="hidden" name="view" value="{{ view }}">
+  <input name="q" value="{{ q }}" placeholder="Search email…" style="min-width:220px">
+  <select name="status"><option value="">Any status</option>{% for s in statuses %}<option value="{{ s }}" {% if status == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select>
+  <select name="bmi"><option value="">Any BMI</option><option value="under" {% if bmi == "under" %}selected{% endif %}>Underweight</option><option value="healthy" {% if bmi == "healthy" %}selected{% endif %}>Healthy</option><option value="over" {% if bmi == "over" %}selected{% endif %}>Overweight</option><option value="obese" {% if bmi == "obese" %}selected{% endif %}>Obesity range</option><option value="none" {% if bmi == "none" %}selected{% endif %}>No height/weight</option></select>
+  <select name="sort">{% for k, label in sorts %}<option value="{{ k }}" {% if sort == k %}selected{% endif %}>Sort: {{ label }}</option>{% endfor %}</select>
+  <select name="dir"><option value="desc" {% if dir == "desc" %}selected{% endif %}>High → low</option><option value="asc" {% if dir == "asc" %}selected{% endif %}>Low → high</option></select>
+  <button>Apply</button>
+  <span class="mut">{{ total_matching }} user(s)</span>
+  <span style="margin-left:auto"><button type="button" class="ghost {% if view == 'cards' %}on{% endif %}" data-view="cards">▦ Cards</button> <button type="button" class="ghost {% if view == 'table' %}on{% endif %}" data-view="table">☰ Table</button></span>
+</form>
+
+<div id="usersBox" class="view-{{ view }}">
+<div id="userCards" class="grid g3">
+{% for r in page %}
+  <a class="card ucard" href="{% url 'analytics_user' r.id %}?tz={{ tzname }}">
+    <div class="head"><span class="avatar s-{{ r.status }}">{{ r.initial }}</span>
+      <div style="min-width:0"><div class="em">{{ r.email }}</div>
+        <span class="pill s-{{ r.status }}">{{ r.status }}</span> {% if r.email_verified %}<span class="mut" title="Email confirmed">✔ verified</span>{% else %}<span class="mut" title="Email not confirmed">✖ unverified</span>{% endif %}</div></div>
+    <div class="stats">
+      <div><b>{{ r.sessions }}</b><span>sessions</span></div>
+      <div><b>{{ r.hours }}</b><span>worn</span></div>
+      <div><b>{{ r.avg_compliance|default_if_none:"–" }}{% if r.avg_compliance is not None %}%{% endif %}</b><span>compliance</span></div>
+      <div><b>{{ r.avg_deviation|default_if_none:"–" }}{% if r.avg_deviation is not None %}°{% endif %}</b><span>avg lean</span></div>
+    </div>
+    <div class="foot">
+      <svg class="spark" viewBox="0 0 96 26" aria-label="Recent session compliance"><polyline points="{{ r.spark_pts }}"/></svg>
+      <span>🔥 {{ r.current_streak }}d</span>
+      {% if r.bmi %}<span class="pill b-{{ r.bmi_key }}" title="{{ r.height_cm }} cm · {{ r.weight_kg }} kg">BMI {{ r.bmi }}</span>{% else %}<span class="mut">no BMI</span>{% endif %}
+    </div>
+    <div class="foot"><span>Joined {{ r.created_at|date:"Y-m-d" }}</span><span>Last active {{ r.last_active|date:"Y-m-d"|default:"never" }}</span></div>
+  </a>
+{% empty %}<div class="card mut">No users match these filters.</div>{% endfor %}
+</div>
+
+<div id="userTable" class="card scroll">
+<table>
+<tr><th>User</th><th>Status</th><th>Joined</th><th>Last active</th><th>Sessions</th><th>Active days</th><th>Wear time</th><th>Compliance</th><th>Avg lean</th><th>Alerts</th><th>Streak</th><th>Height</th><th>Weight</th><th>BMI</th></tr>
+{% for r in page %}<tr>
+  <td><a href="{% url 'analytics_user' r.id %}?tz={{ tzname }}">{{ r.email }}</a></td><td><span class="pill s-{{ r.status }}">{{ r.status }}</span></td>
+  <td>{{ r.created_at|date:"Y-m-d" }}</td><td>{{ r.last_active|date:"Y-m-d H:i"|default:"–" }}</td><td>{{ r.sessions }}</td><td>{{ r.active_days }}</td><td>{{ r.hours }}</td>
+  <td>{{ r.avg_compliance|default_if_none:"–" }}</td><td>{{ r.avg_deviation|default_if_none:"–" }}</td><td>{{ r.alerts }}</td><td>{{ r.current_streak }} / {{ r.longest_streak }}</td>
+  <td>{{ r.height_cm|default_if_none:"–" }}</td><td>{{ r.weight_kg|default_if_none:"–" }}</td><td>{% if r.bmi %}<span class="pill b-{{ r.bmi_key }}">{{ r.bmi }}</span>{% else %}–{% endif %}</td>
+</tr>{% endfor %}
+</table></div>
+</div>
+
+<div class="pg">
+  {% if page.has_previous %}<a class="btn ghost" href="?{{ qs }}&page={{ page.previous_page_number }}">← Previous</a>{% endif %}
+  <span class="mut">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}<a class="btn ghost" href="?{{ qs }}&page={{ page.next_page_number }}">Next →</a>{% endif %}
+</div>
+<div class="note">Click a person to open their full profile: the same report they see in the app, day by day, time-of-day deviation, every session and their settings.</div>
+{% endblock %}

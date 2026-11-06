@@ -1,0 +1,13 @@
+# secrets & local data - NEVER commit these
+.env
+*.sqlite3
+db.sqlite3
+backups/
+
+# generated
+staticfiles/
+__pycache__/
+*.pyc
+venv/
+.venv/
+.DS_Store

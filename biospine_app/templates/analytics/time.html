@@ -1,0 +1,49 @@
+{% extends "analytics/base.html" %}
+{% block title %}Time patterns · BioSpine Analytics{% endblock %}
+{% block content %}
+<h2>When do people wear it, and when do they slouch?</h2>
+{% if notes %}<ul class="sent">{% for n in notes %}<li>{{ n }}</li>{% endfor %}</ul>{% else %}<div class="card mut">Not enough sessions yet. Charts appear once people record sessions.</div>{% endif %}
+
+<div class="grid g2" style="margin-top:12px">
+  <div class="card"><canvas id="cHours"></canvas></div>
+  <div class="card"><canvas id="cWeek"></canvas></div>
+</div>
+
+<h2>Busy times (wear minutes, Mon–Sun × hour)</h2>
+<div class="card scroll" id="heatAll"></div>
+<div class="note">Times use the {{ tzname }} timezone. Add <code>?tz=Asia/Kolkata</code> (any IANA name) to the address to change it.</div>
+
+<h2>Parts of the day</h2>
+<div class="grid k">
+  {% for dp in dayparts %}<div class="card kpi"><b>{{ dp.avg_dev|default_if_none:"–" }}{% if dp.avg_dev is not None %}°{% endif %}</b><span>{{ dp.name }} ({{ dp.span }}h) · avg deviation<br>{{ dp.minutes }} min · {{ dp.compliance|default_if_none:"–" }}% compliance · {{ dp.alerts }} alerts</span></div>{% endfor %}
+</div>
+
+<h2>Hour by hour</h2>
+<div class="card scroll"><table>
+  <tr><th>Hour</th><th>Minutes worn</th><th>Sessions</th><th>Avg deviation (°)</th><th>Compliance %</th><th>Alerts / hour</th></tr>
+  {% for h in hourly %}{% if h.minutes %}<tr><td>{{ h.label }}</td><td>{{ h.minutes }}</td><td>{{ h.sessions }}</td><td>{{ h.avg_dev|default_if_none:"–" }}</td><td>{{ h.compliance|default_if_none:"–" }}</td><td>{{ h.alerts_per_hour|default_if_none:"–" }}</td></tr>{% endif %}{% endfor %}
+</table></div>
+
+<h2>Weekdays</h2>
+<div class="card scroll"><table>
+  <tr><th>Day</th><th>Minutes worn</th><th>Sessions</th><th>Avg deviation (°)</th><th>Compliance %</th></tr>
+  {% for w in weekdays %}<tr><td>{{ w.day }}</td><td>{{ w.minutes }}</td><td>{{ w.sessions }}</td><td>{{ w.avg_dev|default_if_none:"–" }}</td><td>{{ w.compliance|default_if_none:"–" }}</td></tr>{% endfor %}
+</table></div>
+
+{{ chart|json_script:"d-chart" }}
+<script>
+window.BS_PAGE = function () {
+  var d = BS.json('d-chart'), C = BS.c;
+  BS.heat('heatAll', d.heatmap, 'min');
+  BS.chart('cHours', 'bar', {labels: d.hourly.map(function (r) { return r.hour; }), datasets: [
+    {label: 'Minutes worn', data: d.hourly.map(function (r) { return r.minutes; }), backgroundColor: 'rgba(251,191,36,.55)'},
+    {label: 'Avg deviation °', data: d.hourly.map(function (r) { return r.avg_dev; }), type: 'line', borderColor: C.red, yAxisID: 'y1', tension: .25, spanGaps: true},
+    {label: 'Compliance %', data: d.hourly.map(function (r) { return r.compliance; }), type: 'line', borderColor: C.green, yAxisID: 'y2', tension: .25, spanGaps: true}]},
+    'By hour of day', {scales: {y1: {position: 'right', min: 0, grid: {drawOnChartArea: false}}, y2: {display: false, min: 0, max: 100}}});
+  BS.chart('cWeek', 'bar', {labels: d.weekdays.map(function (r) { return r.day; }), datasets: [
+    {label: 'Minutes worn', data: d.weekdays.map(function (r) { return r.minutes; }), backgroundColor: 'rgba(56,189,248,.55)'},
+    {label: 'Compliance %', data: d.weekdays.map(function (r) { return r.compliance; }), type: 'line', borderColor: C.green, yAxisID: 'y1'}]},
+    'By day of week', {scales: {y1: BS.right(0, 100)}});
+};
+</script>
+{% endblock %}

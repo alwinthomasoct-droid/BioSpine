@@ -1,0 +1,195 @@
+{% extends "analytics/base.html" %}
+{% block title %}{{ summary.email }} · BioSpine Analytics{% endblock %}
+{% block content %}
+<p><a href="{% url 'analytics_users' %}?tz={{ tzname }}">← All users</a></p>
+
+<div class="card" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+  <span class="avatar s-{{ summary.status }}" style="width:64px;height:64px;font-size:26px">{{ initial }}</span>
+  <div style="flex:1;min-width:240px">
+    <h1 style="margin:0;font-size:22px">{{ summary.email }} <span class="pill s-{{ summary.status }}">{{ summary.status }}</span></h1>
+    <div class="mut">User #{{ u.id }} · joined {{ summary.joined|date:"Y-m-d H:i" }} ({{ summary.account_age_days }} days ago) · {% if u.email_verified %}✔ email confirmed{% else %}✖ email not confirmed{% endif %} · times in {{ tzname }}</div>
+    <div style="margin-top:6px">
+      {% if p.body %}<span class="pill b-{{ p.body.key }}">BMI {{ p.body.bmi }} · {{ p.body.category }}</span> <span class="mut">{{ u.height_cm }} cm · {{ u.weight_kg }} kg</span>{% else %}<span class="mut">No height / weight given</span>{% endif %}
+    </div>
+  </div>
+  <div>
+    <a class="btn" href="{% url 'analytics_report_user' u.id 'xlsx' %}?tz={{ tzname }}">⬇ Excel</a>
+    <a class="btn ghost" href="{% url 'analytics_report_user' u.id 'pdf' %}?tz={{ tzname }}">⬇ PDF</a>
+  </div>
+</div>
+
+<div class="subtabs">
+  <button data-tab="report">📋 Report (what they see)</button>
+  <button data-tab="days">📅 Day by day</button>
+  <button data-tab="slots">🕒 Time slots</button>
+  <button data-tab="sessions">🗂 Sessions</button>
+  <button data-tab="trends">📈 Weekly trend</button>
+  <button data-tab="profile">👤 Profile &amp; settings</button>
+  <button data-tab="activity">🔔 Activity{% if ai_on %} &amp; chats{% endif %}</button>
+</div>
+
+<!-- 1. REPORT: the same summary the person sees under "My report" -->
+<section class="subpane" id="tab-report">
+  <form class="f" method="get"><input type="hidden" name="tz" value="{{ tzname }}">
+    <span class="mut">Period:</span>
+    <select name="days" onchange="this.form.submit()">
+      <option value="7" {% if p.days == 7 %}selected{% endif %}>Last 7 days</option><option value="30" {% if p.days == 30 %}selected{% endif %}>Last 30 days</option>
+      <option value="90" {% if p.days == 90 %}selected{% endif %}>Last 90 days</option><option value="0" {% if p.days == 0 %}selected{% endif %}>Everything</option></select>
+  </form>
+  <div class="grid k">
+    <div class="card kpi"><b>{{ rep.score|default_if_none:"–" }}{% if rep.score is not None %}%{% endif %}</b><span>Posture score{% if rep.delta is not None %} · {% if rep.delta >= 0 %}▲{% else %}▼{% endif %} {{ rep.delta }} vs before{% endif %}</span></div>
+    <div class="card kpi"><b>{{ rep.time_text }}</b><span>Time worn · {{ rep.sessions }} session(s)</span></div>
+    <div class="card kpi"><b>{{ rep.avg_dev|default_if_none:"–" }}{% if rep.avg_dev is not None %}°{% endif %}</b><span>Average forward lean</span></div>
+    <div class="card kpi"><b>{{ rep.alerts }}</b><span>Reminders · {{ rep.alerts_per_hour|default_if_none:"–" }} per hour</span></div>
+    <div class="card kpi"><b>{{ summary.streak_current }} 🔥</b><span>Streak now · best {{ summary.streak_longest }}</span></div>
+  </div>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card"><b>Good posture vs slouching</b> <span class="mut">(this period)</span>{% include "analytics/_donut.html" with d=p.overall_donut %}{% if not p.overall_donut %}<p class="mut">No sessions in this period.</p>{% endif %}</div>
+    <div class="card"><b>Recent time periods</b> <span class="mut">(open the Sessions tab for every graph)</span>
+      <table>{% for c in p.cards|slice:":5" %}<tr><td><a href="{% url 'analytics_session' u.id c.id %}?tz={{ tzname }}">{{ c.day }}</a></td><td>{{ c.range }}</td><td>{{ c.minutes }} min</td><td class="{% if c.score >= 60 %}pos{% else %}neg{% endif %}">{{ c.score }}%</td></tr>{% empty %}<tr><td class="mut">No sessions yet.</td></tr>{% endfor %}</table></div>
+  </div>
+  <h2>In plain words</h2>
+  <ul class="sent">{% for line in rep.sentences %}<li>{{ line }}</li>{% endfor %}</ul>
+  <h2>Lifetime summary</h2>
+  <div class="grid k">
+    <div class="card kpi"><b>{{ summary.sessions }}</b><span>Sessions · {{ summary.active_days }} active days</span></div>
+    <div class="card kpi"><b>{{ summary.total_time }}</b><span>Total wear time · avg {{ summary.avg_session }}</span></div>
+    <div class="card kpi"><b>{{ summary.avg_compliance|default_if_none:"–" }}%</b><span>Avg compliance (best {{ summary.best_compliance|default_if_none:"–" }} / worst {{ summary.worst_compliance|default_if_none:"–" }})</span></div>
+    <div class="card kpi"><b class="{% if summary.compliance_trend is not None %}{% if summary.compliance_trend >= 0 %}pos{% else %}neg{% endif %}{% endif %}">{% if summary.compliance_trend is None %}–{% else %}{{ summary.compliance_trend|stringformat:"+.1f" }} pts{% endif %}</b><span>Trend (last 5 vs first 5 sessions)</span></div>
+    <div class="card kpi"><b>{{ summary.good_sessions_pct|default_if_none:"–" }}%</b><span>Sessions ≥ 60% compliance</span></div>
+    <div class="card kpi"><b>{{ summary.longest_gap_days }} d</b><span>Longest gap between active days</span></div>
+  </div>
+</section>
+
+<!-- 2. DAY BY DAY -->
+<section class="subpane" id="tab-days">
+  <div class="card"><canvas id="cDays"></canvas></div>
+  <h2>Time spent each day</h2>
+  <div class="card scroll"><table>
+    <tr><th>Date</th><th>Day</th><th>Time periods used</th><th>Time worn (min)</th><th>Sessions</th><th>Avg deviation (°)</th><th>Compliance %</th><th>Alerts</th></tr>
+    {% for d in p.daily reversed %}<tr><td>{{ d.date }}</td><td>{{ d.weekday }}</td><td style="white-space:normal">{{ d.periods }}</td><td>{{ d.minutes }}</td><td>{{ d.sessions }}</td><td>{{ d.avg_dev|default_if_none:"–" }}</td><td>{{ d.compliance|default_if_none:"–" }}</td><td>{{ d.alerts }}</td></tr>
+    {% empty %}<tr><td colspan="9" class="mut">No sessions yet.</td></tr>{% endfor %}
+  </table></div>
+</section>
+
+<!-- 3. TIME SLOTS -->
+<section class="subpane" id="tab-slots">
+  <div class="grid k">
+    {% for dp in p.dayparts %}<div class="card kpi"><b>{{ dp.avg_dev|default_if_none:"–" }}{% if dp.avg_dev is not None %}°{% endif %}</b><span>{{ dp.name }} ({{ dp.span }}h) · avg deviation<br>{{ dp.minutes }} min · {{ dp.compliance|default_if_none:"–" }}% compliance</span></div>{% endfor %}
+  </div>
+  <div class="card" style="margin-top:12px"><canvas id="cHours"></canvas></div>
+  <h2>When they wear it (minutes, Mon–Sun × hour)</h2>
+  <div class="card scroll" id="heatUser"></div>
+  <h2>Average deviation in every time slot</h2>
+  <div class="card scroll"><table>
+    <tr><th>Time slot</th><th>Minutes worn</th><th>Sessions</th><th>Avg deviation (°)</th><th>Compliance %</th><th>Alerts / hour</th></tr>
+    {% for h in p.hourly %}{% if h.minutes %}<tr><td>{{ h.label }} – {{ h.hour|add:1 }}:00</td><td>{{ h.minutes }}</td><td>{{ h.sessions }}</td><td>{{ h.avg_dev|default_if_none:"–" }}</td><td>{{ h.compliance|default_if_none:"–" }}</td><td>{{ h.alerts_per_hour|default_if_none:"–" }}</td></tr>{% endif %}{% empty %}{% endfor %}
+  </table></div>
+  <h2>By weekday</h2>
+  <div class="card scroll"><table>
+    <tr><th>Day</th><th>Minutes worn</th><th>Avg per active day</th><th>Sessions</th><th>Avg deviation (°)</th><th>Compliance %</th></tr>
+    {% for w in p.weekdays %}<tr><td>{{ w.day }}</td><td>{{ w.minutes }}</td><td>{{ w.avg_minutes_per_day|default_if_none:"–" }}</td><td>{{ w.sessions }}</td><td>{{ w.avg_dev|default_if_none:"–" }}</td><td>{{ w.compliance|default_if_none:"–" }}</td></tr>{% endfor %}
+  </table></div>
+  <div class="note">A session is split across the clock hours it covered. Deviation = average forward lean in degrees (lower is better); under 6° is good, over 12° is poor. Session times are the save time minus the duration.</div>
+</section>
+
+<!-- 4. SESSIONS: every time period with its own graph and circle diagram -->
+<section class="subpane" id="tab-sessions">
+  {% if not p.cards %}
+  <div class="card"><b>No sessions received from this user yet.</b>
+    <p class="mut" style="white-space:normal">Sessions reach the server when someone with a signed-in account uses a <b>real device</b> (Bluetooth, USB or Wi-Fi) for at least 5 seconds and then ends the session. <b>Demo data is practice only and is not sent</b>, unless the user switches on <i>Settings → Test mode: save demo sessions to my account</i>. Sessions that could not be sent (no internet) are retried automatically the next time the user opens the app.</p></div>
+  {% endif %}
+  {% for c in p.cards %}
+  <div class="card scard" style="margin-bottom:12px">
+    <div>
+      <h3>{{ c.day }} · {{ c.range }} <span class="mut">({{ c.minutes }} min)</span></h3>
+      <div class="meta"><span>Score <b>{{ c.score }}%</b></span><span>{{ c.alerts }} alerts</span><span>Avg lean <b class="dev-{{ c.dev_class }}">{{ c.avg|default_if_none:"–" }}°</b></span>
+        <span>Worst {{ c.max|default_if_none:"–" }}°</span>{% if c.peak_load %}<span>Neck load up to {{ c.peak_load }} lbs</span>{% endif %}<span>mode {{ c.mode }}</span>{% if c.source == "demo" %}<span>demo</span>{% endif %}</div>
+      {% include "analytics/_trend.html" with chart=c.chart %}
+      <p style="margin:8px 0 0"><a href="{% url 'analytics_session' u.id c.id %}?tz={{ tzname }}">Open full details and events →</a></p>
+    </div>
+    <div class="donuts">{% include "analytics/_donut.html" with d=c.donut %}</div>
+  </div>
+  {% endfor %}
+  {% if p.session_rows|length > 15 %}<div class="note">Showing the 15 newest sessions as graphs. The table below lists all {{ p.session_rows|length }}.</div>{% endif %}
+  <h2>All sessions</h2>
+  <div class="card scroll"><table>
+    <tr><th>Started</th><th>Ended</th><th>Minutes</th><th>Compliance %</th><th>Alerts</th><th>Avg deviation (°)</th></tr>
+    {% for r in p.session_rows %}<tr><td>{{ r.start }}</td><td>{{ r.end }}</td><td>{{ r.minutes }}</td><td>{{ r.compliance }}</td><td>{{ r.alerts }}</td><td class="dev-{{ r.dev_class }}">{{ r.avg_dev }}</td></tr>
+    {% empty %}<tr><td colspan="6" class="mut">No sessions yet.</td></tr>{% endfor %}
+  </table></div>
+  <div class="note">Graphs are stored from the app update that added them; older sessions only have their summary numbers.</div>
+</section>
+
+<!-- 5. WEEKLY TREND -->
+<section class="subpane" id="tab-trends">
+  <div class="card"><canvas id="cWeekly"></canvas></div>
+  <h2>Week by week</h2>
+  <div class="card scroll"><table>
+    <tr><th>Week starting</th><th>Sessions</th><th>Hours</th><th>Compliance %</th><th>Avg deviation (°)</th><th>Alerts</th></tr>
+    {% for w in p.weekly reversed %}<tr><td>{{ w.week }}</td><td>{{ w.sessions }}</td><td>{{ w.hours }}</td><td>{{ w.compliance|default_if_none:"–" }}</td><td>{{ w.avg_dev|default_if_none:"–" }}</td><td>{{ w.alerts }}</td></tr>{% empty %}<tr><td colspan="6" class="mut">No sessions yet.</td></tr>{% endfor %}
+  </table></div>
+</section>
+
+<!-- 6. PROFILE -->
+<section class="subpane" id="tab-profile">
+  <div class="grid g2">
+    <div class="card"><b>Account</b><table>
+      <tr><td class="mut">Email</td><td>{{ u.email }}</td></tr>
+      <tr><td class="mut">Joined</td><td>{{ u.created_at|date:"Y-m-d H:i" }}</td></tr>
+      <tr><td class="mut">Email confirmed</td><td>{% if u.email_verified %}Yes{% else %}No{% endif %}</td></tr>
+      <tr><td class="mut">Weekly email</td><td>{% if u.weekly_email %}On{% else %}Off{% endif %}{% if u.last_weekly_email_at %} · last sent {{ u.last_weekly_email_at|date:"Y-m-d" }}{% endif %}</td></tr>
+      <tr><td class="mut">Daily goal</td><td>{{ u.daily_goal_minutes }} min</td></tr>
+      <tr><td class="mut">Streak (now / best)</td><td>{{ summary.streak_current }} / {{ summary.streak_longest }} days</td></tr>
+      <tr><td class="mut">Review</td><td>{% if u.review_prompt_done %}Asked{% else %}Not asked yet{% endif %}</td></tr>
+    </table></div>
+    <div class="card"><b>Body &amp; BMI</b>
+      {% if p.body %}<table>
+      <tr><td class="mut">Height / weight</td><td>{{ u.height_cm }} cm · {{ u.weight_kg }} kg{% if u.body_updated_at %} <span class="mut">(updated {{ u.body_updated_at|date:"Y-m-d" }})</span>{% endif %}</td></tr>
+      <tr><td class="mut">BMI</td><td><span class="pill b-{{ p.body.key }}">{{ p.body.bmi }} · {{ p.body.category }}</span></td></tr>
+      <tr><td class="mut">Healthy weight for this height</td><td>{{ p.body.healthy_min_kg }} – {{ p.body.healthy_max_kg }} kg</td></tr>
+      </table><div class="note">BMI is a rough guide for adults and does not measure body fat or muscle.</div>
+      {% else %}<p class="mut">This user has not entered height and weight.</p>{% endif %}</div>
+    <div class="card"><b>Posture settings in the app</b><table>
+      <tr><td class="mut">Mode</td><td>{{ summary.mode }}</td></tr>
+      <tr><td class="mut">Forward-lean alert angle</td><td>{{ summary.settings.warning_angle }}°</td></tr>
+      <tr><td class="mut">Sit-up margin</td><td>{{ summary.settings.safe_zone }}°</td></tr>
+      <tr><td class="mut">Sideways-lean alert angle</td><td>{{ summary.settings.lateral_limit }}°</td></tr>
+    </table></div>
+  </div>
+</section>
+
+<!-- 7. ACTIVITY -->
+<section class="subpane" id="tab-activity">
+  <div class="card"><b>Timeline</b> <span class="mut">(newest first, {{ timeline|length }} of {{ timeline_total }})</span>
+    <div class="tl" style="margin-top:8px">{% for e in timeline %}<div class="{{ e.kind }}"><b>{{ e.title }}</b> <span class="mut">{{ e.when|date:"Y-m-d H:i" }}</span>{% if e.detail %}<br><span class="mut">{{ e.detail }}</span>{% endif %}</div>{% endfor %}</div></div>
+  {% if ai_on %}
+  <div class="card" style="margin-top:12px"><b>AI Physio questions ({{ summary.chats }})</b>
+    {% for c in chats %}<p><span class="mut">{{ c.created_at|date:"Y-m-d H:i" }}</span><br><b>Q:</b> {{ c.question }}<br><b>A:</b> {{ c.answer }}
+      {% if c.context %}<br><span class="mut">Posture at the time: {{ c.context }}</span>{% endif %}</p>{% empty %}<span class="mut">No chats.</span>{% endfor %}
+    <div class="note">Chat text is personal content: visible to staff only and not included in the CSV exports.</div></div>
+  {% endif %}
+</section>
+
+{{ chart|json_script:"d-chart" }}
+<script>
+window.BS_PAGE = function () {
+  var d = BS.json('d-chart'), C = BS.c;
+  BS.heat('heatUser', d.heatmap, 'min');
+  BS.chart('cDays', 'bar', {labels: d.daily.map(function (r) { return r.date.slice(5); }), datasets: [
+    {label: 'Minutes worn', data: d.daily.map(function (r) { return r.minutes; }), backgroundColor: 'rgba(56,189,248,.5)'},
+    {label: 'Compliance %', data: d.daily.map(function (r) { return r.compliance; }), type: 'line', borderColor: C.green, yAxisID: 'y1', tension: .3},
+    {label: 'Avg deviation °', data: d.daily.map(function (r) { return r.avg_dev; }), type: 'line', borderColor: C.red, yAxisID: 'y2', tension: .3}]},
+    'Daily wear time, compliance and deviation', {scales: {y1: BS.right(0, 100), y2: {position: 'right', min: 0, grid: {drawOnChartArea: false}, display: true}}});
+  BS.chart('cHours', 'bar', {labels: d.hourly.map(function (r) { return r.hour; }), datasets: [
+    {label: 'Minutes worn', data: d.hourly.map(function (r) { return r.minutes; }), backgroundColor: 'rgba(251,191,36,.55)'},
+    {label: 'Avg deviation °', data: d.hourly.map(function (r) { return r.avg_dev; }), type: 'line', borderColor: C.red, yAxisID: 'y1', tension: .25, spanGaps: true}]},
+    'Wear time and average deviation by hour of day', {scales: {y1: {position: 'right', min: 0, grid: {drawOnChartArea: false}}}});
+  BS.chart('cWeekly', 'bar', {labels: d.weekly.map(function (r) { return r.week.slice(5); }), datasets: [
+    {label: 'Sessions', data: d.weekly.map(function (r) { return r.sessions; }), backgroundColor: C.blue},
+    {label: 'Compliance %', data: d.weekly.map(function (r) { return r.compliance; }), type: 'line', borderColor: C.green, yAxisID: 'y1'},
+    {label: 'Avg deviation °', data: d.weekly.map(function (r) { return r.avg_dev; }), type: 'line', borderColor: C.red, yAxisID: 'y2'}]},
+    'Weekly sessions, compliance and deviation', {scales: {y1: BS.right(0, 100), y2: {position: 'right', min: 0, grid: {drawOnChartArea: false}}}});
+};
+</script>
+{% endblock %}

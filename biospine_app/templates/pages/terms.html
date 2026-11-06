@@ -1,0 +1,15 @@
+{% extends "pages/base.html" %}
+{% block title %}Terms of Use{% endblock %}
+{% block content %}
+<article class="card doc"><h1>Terms of Use</h1><p class="hint">Last updated: 7 October 2026</p>
+<!-- REVIEW: this is a plain-language template. Have it reviewed by a qualified lawyer for your country before you rely on it. -->
+<h2>1. Who we are</h2><p>{{ SITE_NAME }} ("the Service") is operated by {{ OPERATOR_NAME }}{% if CONTACT_EMAIL %} ({{ CONTACT_EMAIL }}){% endif %}.</p>
+<h2>2. Using the Service</h2><p>You must be at least 16 years old, or have a parent or guardian's permission. Provide a real email address, keep your password private, and tell us if you think your account was compromised. You are responsible for activity on your account.</p>
+<h2>3. Wellness only</h2><p>The Service is for general wellness and education. It is not medical advice or a medical device - please read the <a href="{% url 'disclaimer' %}">Health &amp; AI Disclaimer</a>.</p>
+<h2>4. Acceptable use</h2><p>Do not attack, overload or probe the Service, scrape it automatically, attempt to access other people's accounts or data, upload unlawful content, or use the AI features to produce harmful or abusive content. We may apply usage limits and may suspend accounts that break these rules.</p>
+<h2>5. Your data</h2><p>How we handle personal data is described in the <a href="{% url 'privacy' %}">Privacy Policy</a>. You can export or permanently delete your account and data at any time from Settings.</p>
+<h2>6. Availability and changes</h2><p>We try to keep the Service running, but it is provided "as is" without guarantees of uninterrupted or error-free operation. Features may change. AI answers may be wrong.</p>
+<h2>7. Liability</h2><p>To the extent allowed by law, {{ OPERATOR_NAME }} is not liable for indirect or consequential loss, or for decisions you make based on the Service's output. Nothing here limits liability that cannot legally be limited.</p>
+<h2>8. Changes to these terms</h2><p>If we make important changes we will update the date above and, where appropriate, notify you. Continuing to use the Service means you accept the updated terms.</p>
+<h2>9. Contact</h2><p>Questions? Use the <a href="{% url 'contact' %}">contact form</a>.</p></article>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "analytics/base.html" %}
+{% block title %}Posture quality · BioSpine Analytics{% endblock %}
+{% block content %}
+<h2>How well is everyone sitting?</h2>
+<div class="grid k">
+  <div class="card kpi"><b>{{ kpi.avg_compliance|default_if_none:"–" }}%</b><span>Average compliance (time sitting well)</span></div>
+  <div class="card kpi"><b>{{ kpi.avg_deviation|default_if_none:"–" }}°</b><span>Average forward lean (lower is better)</span></div>
+  <div class="card kpi"><b>{{ good_pct|default_if_none:"–" }}{% if good_pct is not None %}%{% endif %}</b><span>Sessions with 60%+ compliance</span></div>
+  <div class="card kpi"><b>{{ alerts_per_hour|default_if_none:"–" }}</b><span>Slouch alerts per hour worn</span></div>
+  <div class="card kpi"><b>{{ kpi.total_alerts }}</b><span>Alerts in total</span></div>
+</div>
+
+<h2>Is it getting better over time?</h2>
+<div class="card"><canvas id="cQuality"></canvas><div class="note">Daily averages of everyone's sessions, weighted by time worn. Falling deviation with rising compliance means the product is working.</div></div>
+
+<h2>Spread</h2>
+<div class="grid g3">
+  <div class="card"><canvas id="cDist"></canvas></div>
+  <div class="card"><canvas id="cDev"></canvas></div>
+  <div class="card"><canvas id="cLen"></canvas></div>
+</div>
+
+<h2>Who is changing?</h2>
+<div class="grid g2">
+  <div class="card"><b>📈 Improving</b> <span class="mut">(last 3 sessions vs first 3, users with 6+ sessions)</span>
+    <table>{% for r in trends.improving %}<tr><td><a href="{% url 'analytics_user' r.uid %}?tz={{ tzname }}">{{ r.email }}</a></td><td>{{ r.first }}% → {{ r.last }}%</td><td class="pos">+{{ r.change }}</td></tr>{% empty %}<tr><td class="mut">Not enough data yet</td></tr>{% endfor %}</table></div>
+  <div class="card"><b>📉 Slipping</b> <span class="mut">(may need encouragement)</span>
+    <table>{% for r in trends.declining %}<tr><td><a href="{% url 'analytics_user' r.uid %}?tz={{ tzname }}">{{ r.email }}</a></td><td>{{ r.first }}% → {{ r.last }}%</td><td class="neg">{{ r.change }}</td></tr>{% empty %}<tr><td class="mut">Nobody is slipping</td></tr>{% endfor %}</table></div>
+</div>
+
+{{ chart|json_script:"d-chart" }}
+<script>
+window.BS_PAGE = function () {
+  var d = BS.json('d-chart'), C = BS.c;
+  BS.chart('cQuality', 'line', {labels: d.quality.map(function (r) { return r.date.slice(5); }), datasets: [
+    {label: 'Compliance %', data: d.quality.map(function (r) { return r.compliance; }), borderColor: C.green, tension: .3, spanGaps: true},
+    {label: 'Avg deviation °', data: d.quality.map(function (r) { return r.avg_dev; }), borderColor: C.red, yAxisID: 'y1', tension: .3, spanGaps: true},
+    {label: 'Hours worn', data: d.quality.map(function (r) { return r.hours; }), type: 'bar', backgroundColor: 'rgba(56,189,248,.35)', yAxisID: 'y2'}]},
+    'Daily compliance, deviation and wear time (last 60 days)', {scales: {y: {min: 0, max: 100}, y1: {position: 'right', min: 0, grid: {drawOnChartArea: false}}, y2: {display: false}}});
+  BS.chart('cDist', 'bar', {labels: d.dist.map(function (r) { return r.label; }), datasets: [{label: 'Sessions', data: d.dist.map(function (r) { return r.count; }), backgroundColor: C.green}]}, 'Sessions by compliance %');
+  BS.chart('cDev', 'bar', {labels: d.dev.map(function (r) { return r.label; }), datasets: [{label: 'Sessions', data: d.dev.map(function (r) { return r.count; }), backgroundColor: C.red}]}, 'Sessions by average forward lean');
+  BS.chart('cLen', 'bar', {labels: d.len.map(function (r) { return r.label; }), datasets: [{label: 'Sessions', data: d.len.map(function (r) { return r.count; }), backgroundColor: C.violet}]}, 'How long sessions last');
+};
+</script>
+{% endblock %}

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 340" role="img">
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0c2340"/><stop offset="1" stop-color="#1d1b4b"/></linearGradient>
+<linearGradient id="gl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#60a5fa"/><stop offset="1" stop-color="#34d399"/></linearGradient></defs>
+<rect width="520" height="340" rx="22" fill="url(#bg)"/><rect x="150" y="26" width="220" height="290" rx="30" fill="#0b1220" stroke="#475569" stroke-width="5"/>
+<rect x="166" y="60" width="188" height="52" rx="12" fill="rgba(46,204,113,.18)" stroke="#2ecc71"/><text x="180" y="82" font-family="Arial" font-size="12" font-weight="700" fill="#34d399">POSTURE OPTIMAL</text><text x="180" y="100" font-family="Arial" font-size="11" fill="#94a3b8">Great job, keep it up!</text>
+<circle cx="326" cy="86" r="16" fill="none" stroke="#2ecc71" stroke-width="5"/>
+<polyline points="166,176 190,150 214,164 238,132 262,146 286,120 310,138 334,118 354,128" fill="none" stroke="#38bdf8" stroke-width="4" stroke-linejoin="round"/>
+<rect x="166" y="196" width="188" height="12" rx="6" fill="#1e293b"/><rect x="166" y="196" width="132" height="12" rx="6" fill="url(#gl)"/>
+<text x="166" y="228" font-family="Arial" font-size="11" fill="#94a3b8">Daily goal · 70%</text>
+<g font-size="20"><text x="170" y="270">🔥</text><text x="204" y="270">🏅</text><text x="238" y="270">🎯</text><text x="272" y="270" opacity=".35">🏆</text><text x="306" y="270" opacity=".35">⭐</text></g></svg>

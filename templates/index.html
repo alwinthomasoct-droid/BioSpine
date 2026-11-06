@@ -1,0 +1,928 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#070d18">
+  <meta name="description" content="BioSpine - a smart posture wearable with real-time biofeedback, XP and streaks, back-break reminders and easy reports. Track your posture, build better habits, ease desk-work strain.">
+  <link rel="canonical" href="{{ SITE_URL }}/">
+  <link rel="manifest" href="{% static 'manifest.json' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon-32.png' %}">
+  <link rel="icon" type="image/png" sizes="192x192" href="{% static 'img/icon-192.png' %}">
+  <link rel="shortcut icon" href="{% static 'img/favicon.ico' %}">
+  <link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="BioSpine">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="BioSpine">
+  <meta property="og:title" content="BioSpine - Posture wearable with rewards and back-break reminders">
+  <meta property="og:description" content="Real-time posture feedback, rewards, back-break reminders and easy reports for desk workers.">
+  <meta property="og:url" content="{{ SITE_URL }}/">
+  <meta property="og:image" content="{{ SITE_URL }}{% static 'img/og-image.png' %}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="BioSpine - Active posture retraining">
+  <meta name="twitter:description" content="Real-time posture feedback, rewards, and back-break reminders.">
+  <meta name="twitter:image" content="{{ SITE_URL }}{% static 'img/og-image.png' %}">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"BioSpine","applicationCategory":"HealthApplication","operatingSystem":"Any (modern browser)","description":"Posture tracking companion for a wearable sensor, with rewards, reports and back-break reminders.","url":"{{ SITE_URL }}/","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+  <link rel="stylesheet" href="{% static 'style.css' %}?v=57">
+  <link rel="stylesheet" href="{% static 'extras.css' %}?v=57">
+  <title>BioSpine - Posture Wearable, Rewards &amp; Back-Break Reminders</title>
+
+  <script src="{% static 'theme.js' %}"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script defer src="{% static 'app.js' %}?v=57"></script>
+  <script defer src="{% static 'extras.js' %}?v=57"></script>
+</head>
+<body data-ai="{% if AI_ON %}1{% else %}0{% endif %}">
+  <canvas id="bg3d" class="bg3d" aria-hidden="true"></canvas>
+  <!-- 1. LANDING PAGE (the home / log-in page) -->
+  <div id="landingPage" class="landing-container">
+    <header class="landing-nav">
+      <div class="brand">
+        <img class="brand-mark brand-logo" src="{% static 'img/logo.png' %}" alt="BioSpine logo">
+        <div><strong>BioSpine</strong><span>Your posture buddy</span></div>
+      </div>
+      <nav class="landing-links" aria-label="Site">
+        <a href="#features">Features</a><a href="#how">How it works</a><a href="#reviews">Reviews</a><a href="#faq">FAQ</a>
+        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch between light and dark mode" title="Light / dark mode">🌙</button>
+        <button class="theme-toggle perf" type="button" data-perf-toggle aria-pressed="false" title="Performance mode: turns off the animated background to save battery and keep things fast">⚡<span class="perf-text"> Performance mode</span></button>
+        <button class="primary" id="openAuthModalBtn">Sign In / Get Started</button>
+      </nav>
+    </header>
+
+    <!-- HERO: text on the left, a playable posture demo on the right -->
+    <section class="hero-grid">
+      <div class="hero-copy">
+        <div class="hero-tag">🎮 POSTURE, BUT MAKE IT A GAME</div>
+        <h1>Sit tall. <span class="gradient-text">Earn XP.</span><br>Feel great all day.</h1>
+        <p class="hero-subtext">
+          BioSpine is a small sensor at the base of your neck plus this app. It sounds an alarm and shows a reminder when you slouch, turns good posture into points, streaks and badges, and reminds you to relax your back - even during meetings.
+        </p>
+        <div class="hero-cta-row">
+          <button class="primary hero-btn" id="heroGetStartedBtn">🚀 Start free</button>
+          <button class="secondary hero-btn" id="heroDemoBtn" type="button">▶ Try the live demo (no sign-up)</button>
+        </div>
+        <p class="hero-note">Free to use · No device needed to explore · <a href="/disclaimer/">Wellness tool, not a medical device</a></p>
+        <div class="stat-chips" aria-label="Highlights">
+          <div class="stat-chip"><b data-count="3">0</b><span>ways to connect</span></div>
+          <div class="stat-chip"><b data-count="24" data-suffix="/7">0</b><span>posture tracking</span></div>
+          <div class="stat-chip"><b data-count="12" data-suffix=" lbs">0</b><span>neck load when upright</span></div>
+          <div class="stat-chip"><b data-count="40" data-suffix=" lbs">0</b><span>when slouching 30°</span></div>
+        </div>
+      </div>
+      <!--<div class="hero-demo panel" id="homeDemo">
+        <div class="panel-head"><div><h3>🎯 Try it: lean your head forward</h3><p>See what slouching does to your neck. Drag the slider!</p></div></div>
+        <div class="demo-stage">
+          <svg viewBox="0 0 260 260" class="demo-fig" role="img" aria-label="Side view of a person leaning their head forward">
+            <rect x="0" y="0" width="260" height="260" rx="18" class="demo-bg"/>
+            <line x1="20" y1="236" x2="240" y2="236" class="demo-floor"/>
+            <rect x="60" y="150" width="20" height="86" rx="8" class="demo-chair"/><rect x="60" y="200" width="100" height="14" rx="6" class="demo-chair"/>
+            <g id="demoBody">
+              <rect x="86" y="108" width="34" height="96" rx="16" class="demo-torso"/>
+              <g id="demoHead" style="transform-origin:103px 108px;">
+                <rect x="97" y="62" width="12" height="50" rx="6" class="demo-neck"/>
+                <circle cx="103" cy="46" r="24" class="demo-head"/>
+                <circle cx="112" cy="42" r="3" class="demo-eye"/>
+              </g>
+              <circle cx="103" cy="112" r="6" class="demo-pod"/>
+            </g>
+            <g id="demoLoadBadge"><rect x="150" y="30" width="96" height="54" rx="12" class="demo-badge"/><text x="198" y="54" text-anchor="middle" class="demo-badge-num" id="demoLbs">12 lbs</text><text x="198" y="73" text-anchor="middle" class="demo-badge-sub" id="demoAnimal">like a bowling ball</text></g>
+          </svg>
+        </div>
+        <label class="demo-slider">Head lean <output id="demoDeg">0°</output>
+          <input type="range" id="demoRange" min="0" max="60" value="0" aria-label="How far your head leans forward in degrees">
+        </label>
+        <p class="demo-msg" id="demoMsg">Perfect! Your head sits right over your shoulders.</p>
+      </div>-->
+    </section>
+
+    <!-- SLIDES -->
+    <section class="specs-section" id="features">
+      <h2 class="section-heading">What you get</h2>
+      <div class="slider" id="homeSlider" aria-roledescription="carousel">
+        <div class="slides">
+          <article class="slide" data-active="1">
+            <img src="{% static 'img/gallery/s-buzz.svg' %}" alt="Person slouching and the alarm sounding" loading="lazy">
+            <div class="slide-text"><span class="pill-tag">Instant feedback</span><h3>A clear alarm when you slouch</h3><p>You hear an alarm and see a friendly reminder only after a few seconds of slouching, and it stops the moment you sit up. A big on-screen reminder shows you exactly how to fix it.</p></div>
+          </article>
+          <article class="slide">
+            <img src="{% static 'img/gallery/s-progress.svg' %}" alt="A rising posture score chart" loading="lazy">
+            <div class="slide-text"><span class="pill-tag">See your progress</span><h3>Watch your score climb</h3><p>Daily goals, weekly graphs and simple reports you can download as PDF or Excel. No confusing numbers.</p></div>
+          </article>
+          <article class="slide">
+            <img src="{% static 'img/gallery/s-play.svg' %}" alt="Trophy with level up message" loading="lazy">
+            <div class="slide-text"><span class="pill-tag">Play &amp; level up</span><h3>XP, levels, quests and badges</h3><p>Every good minute earns points. Finish daily quests, keep your streak burning and unlock badges.</p></div>
+          </article>
+          <article class="slide">
+            <img src="{% static 'img/gallery/s-break.svg' %}" alt="Person doing a back stretch" loading="lazy">
+            <div class="slide-text"><span class="pill-tag">Made for busy days</span><h3>Back-break reminders, even in meetings</h3><p>Choose a break every 30 minutes to 2 hours. Meeting-friendly mode reminds you quietly, with no sound and no pop-ups in your way.</p></div>
+          </article>
+        </div>
+        <button class="slider-btn prev" type="button" aria-label="Previous slide">‹</button>
+        <button class="slider-btn next" type="button" aria-label="Next slide">›</button>
+        <div class="slider-dots" role="tablist" aria-label="Choose a slide"></div>
+      </div>
+    </section>
+
+    <!-- FEATURE CARDS (tap/hover to flip) -->
+    <section class="specs-section">
+      <h2 class="section-heading">Built for your workday</h2>
+      <div class="specs-grid flip-grid">
+        <button type="button" class="flip-card"><span class="flip-inner"><span class="flip-front"><i class="spec-icon">🧠</i><b>Smart posture tracking</b><small>Tap to learn more</small></span><span class="flip-back">Spots forward slouching, sideways leaning (like resting on one elbow) and leaning back, shown on a live graph and a 3D spine.</span></span></button>
+        <button type="button" class="flip-card"><span class="flip-inner"><span class="flip-front"><i class="spec-icon">🎮</i><b>Rewards that feel like a game</b><small>Tap to learn more</small></span><span class="flip-back">Earn XP for every good minute, finish daily quests, build a streak and unlock badges as you level up.</span></span></button>
+        <button type="button" class="flip-card"><span class="flip-inner"><span class="flip-front"><i class="spec-icon">🧘</i><b>Back-break timer</b><small>Tap to learn more</small></span><span class="flip-back">Hourly (or any interval you pick) reminders with 1-minute guided stretches. A silent version is made for meetings.</span></span></button>
+        <button type="button" class="flip-card"><span class="flip-inner"><span class="flip-front"><i class="spec-icon">📊</i><b>Easy reports</b><small>Tap to learn more</small></span><span class="flip-back">Plain-language summaries of your week, with one-tap downloads to PDF or Excel.</span></span></button>
+        <button type="button" class="flip-card"><span class="flip-inner"><span class="flip-front"><i class="spec-icon">🪟</i><b>Floating mini-window</b><small>Tap to learn more</small></span><span class="flip-back">A tiny always-on-top posture light that floats above Excel, Zoom, your editor or any full-screen app.</span></span></button>
+        <button type="button" class="flip-card"><span class="flip-inner"><span class="flip-front"><i class="spec-icon">📶</i><b>Three ways to connect</b><small>Tap to learn more</small></span><span class="flip-back">Bluetooth (Chrome / Edge / Android), USB cable (desktop Chrome / Edge) or local Wi-Fi.</span></span></button>
+        {% if AI_ON %}<button type="button" class="flip-card"><span class="flip-inner"><span class="flip-front"><i class="spec-icon">⚡</i><b>AI Physio coach</b><small>Tap to learn more</small></span><span class="flip-back">Ask questions and get simple desk-setup tips and stretches based on your own posture. General wellness guidance, not medical advice.</span></span></button>{% endif %}
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="specs-section" id="how">
+      <h2 class="section-heading">How it works</h2>
+      <div class="steps-grid">
+        <div class="step-card"><b>1</b><h3>Wear &amp; connect</h3><p>Clip the sensor at the base of your neck and connect it from the My Device page. No sensor yet? Start the built-in demo.</p></div>
+        <div class="step-card"><b>2</b><h3>Get gentle nudges</h3><p>If you hold a slouch, the app sounds an alarm and shows a friendly reminder, so you fix it early.</p></div>
+        <div class="step-card"><b>3</b><h3>Level up</h3><p>Earn XP, keep your streak and unlock badges. Your reports show that your posture is really improving.</p></div>
+      </div>
+    </section>
+
+    <!-- PHOTO GALLERY -->
+    <section class="specs-section">
+      <h2 class="section-heading">See it in action</h2>
+      <div class="gallery" id="homeGallery">
+        <figure><img src="{% static 'img/gallery/g-device.svg' %}" alt="The BioSpine sensor" loading="lazy"><figcaption>The sensor</figcaption></figure>
+        <figure><img src="{% static 'img/gallery/g-desk.svg' %}" alt="Upright versus slouching at a desk" loading="lazy"><figcaption>Upright vs slouching</figcaption></figure>
+        <figure><img src="{% static 'img/gallery/g-app.svg' %}" alt="The BioSpine app on a phone" loading="lazy"><figcaption>The app</figcaption></figure>
+        <figure><img src="{% static 'img/gallery/g-meeting.svg' %}" alt="People in a meeting with quiet reminders" loading="lazy"><figcaption>Meeting mode</figcaption></figure>
+      </div>
+    </section>
+
+    <!-- REVIEWS (only reviews the admin has approved) -->
+    <section class="specs-section" id="reviews">
+      <h2 class="section-heading">What people say</h2>
+      <div class="reviews-wrap" id="homeReviews">
+        <div class="review-summary" id="reviewSummary" hidden></div>
+        <div class="review-track" id="reviewTrack"></div>
+        <div class="review-empty" id="reviewEmpty">⭐ Reviews from our users appear here. Use BioSpine for a while and we will ask you for yours!</div>
+      </div>
+    </section>
+
+    <section class="specs-section" id="faq">
+      <h2 class="section-heading">Questions</h2>
+      <div class="faq">
+        <details><summary>Do I need the wearable to try it?</summary><p>No. Press “Try the live demo” to explore every screen with simulated data. To track your real posture you need the BioSpine sensor.</p></details>
+        <details><summary>Does it work on my phone?</summary><p>Yes, the whole app is designed for phones and can be installed to your home screen. Bluetooth pairing works in Chrome on Android. iPhone browsers do not support Web Bluetooth, so on iPhone use the demo, review your history, or pair from a Bluetooth-capable browser app.</p></details>
+        <details><summary>Can it remind me to take back breaks during meetings?</summary><p>Yes. On the Back Break page choose how often (every 30 minutes up to 2 hours) and switch on Meeting-friendly mode: no sound, no pop-ups, just a small quiet note in the corner.</p></details>
+        {% if AI_ON %}<details><summary>Is the AI giving medical advice?</summary><p>No. The AI Physio gives general ergonomics and stretching tips and can be wrong. It is not a medical device or a diagnosis. See the <a href="/disclaimer/">health disclaimer</a>.</p></details>{% endif %}
+        <details><summary>What data do you store?</summary><p>Your email, session summaries (duration, score, alerts), settings{% if AI_ON %}, AI chats{% endif %} and your review if you write one. You can download or permanently delete everything yourself in Settings. Details in the <a href="/privacy/">privacy policy</a>.</p></details>
+        <details><summary>Something is wrong or I have an idea</summary><p>Tell us through the <a href="/contact/">contact form</a>.</p></details>
+      </div>
+    </section>
+
+    <footer class="site-foot">
+      <img class="foot-logo" src="{% static 'img/logo-full-small.png' %}" alt="BioSpine - Your posture buddy" width="130" height="130" loading="lazy">
+      <a href="/privacy/">Privacy Policy</a><a href="/terms/">Terms of Use</a><a href="/disclaimer/">Health Disclaimer</a><a href="/contact/">Contact</a>
+      <p>© <span id="yr"></span> BioSpine. A wellness tool, not a medical device.</p>
+    </footer>
+  </div>
+
+  <!-- AUTHENTICATION MODAL -->
+  <div class="modal-overlay" id="authModal" style="display:none;">
+    <div class="modal-card">
+      <img class="auth-logo" src="{% static 'img/logo-full-small.png' %}" alt="BioSpine - Your posture buddy" width="150" height="150">
+      <h3 id="authModalTitle">Sign In to BioSpine</h3>
+      <p id="authModalSub" style="color:var(--muted); font-size:13px; margin: 8px 0 16px;">Sign in to load your settings, streak, rewards and history.</p>
+      <input type="email" id="authEmailInput" placeholder="name@company.com" autocomplete="email" required style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--line); background:var(--input); color:var(--text); margin-bottom:10px;">
+      <input type="password" id="authPasswordInput" placeholder="Password (min. 8 characters)" autocomplete="current-password" required style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--line); background:var(--input); color:var(--text);">
+      <div id="bodyFields" hidden>
+        <p class="muted-p small" style="margin:12px 0 6px">So we can show your BMI and tailor tips (you can change these later in Settings):</p>
+        <div class="body-row">
+          <label>Height (cm)<input type="number" id="authHeight" inputmode="decimal" min="50" max="250" step="0.1" placeholder="e.g. 170"></label>
+          <label>Weight (kg)<input type="number" id="authWeight" inputmode="decimal" min="15" max="350" step="0.1" placeholder="e.g. 65"></label>
+        </div>
+        <p class="bmi-live" id="authBmi" aria-live="polite">Enter your height and weight to see your BMI.</p>
+      </div>
+      <p id="authError" style="color:#f43f5e; font-size:12px; min-height:14px; margin-top:8px;" role="alert"></p>
+      <p id="authInfo" style="color:#34d399; font-size:12px; margin-bottom:6px;"></p>
+      <button type="button" id="forgotBtn" class="text-btn" style="font-size:12px; padding:0 0 8px; color:var(--muted); display:block;">Forgot password?</button>
+      <button type="button" id="authModeToggle" class="text-btn" style="font-size:12px; padding:0; color:#4f8bf9;">New here? Create an account</button>
+      <p style="font-size:11px; color:var(--faint); margin-top:12px;">By continuing you agree to the <a href="/terms/" target="_blank" rel="noopener">Terms</a> and <a href="/privacy/" target="_blank" rel="noopener">Privacy Policy</a>.</p>
+      <div class="modal-actions" style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
+        <button class="secondary" id="closeAuthModalBtn">Cancel</button>
+        <button class="primary" id="submitAuthBtn">Sign In</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. AUTHENTICATED DASHBOARD WITH FULL SIDEBAR -->
+  <div class="app-shell" id="appShell" style="display:none;">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <img class="brand-mark brand-logo" src="{% static 'img/logo.png' %}" alt="BioSpine logo">
+        <div><strong>BioSpine</strong><span id="userBadge" style="font-size:11px; color:var(--muted);">user@biospine.io</span></div>
+      </div>
+
+      <div class="streak-chip" id="streakChip" title="Consecutive days with 60%+ posture compliance">
+        <span id="sidebarStreak">🔥 0</span><small>Day Streak</small>
+      </div>
+
+      <button class="level-chip" id="sideLevel" type="button" data-goto="rewards" title="Your level - tap to see quests and badges">
+        <span class="lv-badge" id="sideLevelNum">1</span><span class="lv-body"><b id="sideLevelTitle">Rookie</b><i><u id="sideLevelBar"></u></i><small id="sideXp">0 XP</small></span>
+      </button>
+      <nav aria-label="App pages">
+        <button class="nav-btn active" data-view="dashboard">⌂ <span class="lbl-long">Dashboard</span><span class="lbl-short">Home</span></button>
+        <button class="nav-btn" data-view="rewards">🎮 <span class="lbl-long">Rewards &amp; Quests</span><span class="lbl-short">Play</span></button>
+        <button class="nav-btn" data-view="breaktime">🧘 <span class="lbl-long">Back Break</span><span class="lbl-short">Break</span></button>
+        <button class="nav-btn" data-view="biomechanics">🔬 <span class="lbl-long">Posture Lab</span><span class="lbl-short">Lab</span></button>
+        <button class="nav-btn" data-view="analytics">◷ <span class="lbl-long">My Progress</span><span class="lbl-short">Progress</span></button>
+        <button class="nav-btn" data-view="history">🗂 <span class="lbl-long">Session History</span><span class="lbl-short">History</span></button>
+        <button class="nav-btn ai-only" data-view="chats">💬 <span class="lbl-long">Chats with AI Physio</span><span class="lbl-short">Chats</span></button>
+        <button class="nav-btn" data-view="device">⌁ <span class="lbl-long">My Device</span><span class="lbl-short">Device</span></button>
+        <button class="nav-btn" data-view="settings">⚙ <span class="lbl-long">Settings</span><span class="lbl-short">Settings</span></button>
+      </nav>
+
+      <div class="side-footer">
+        <button class="side-review" id="sideReviewBtn" type="button" data-review-open title="Tell us what you think. You can write or change your review any time.">⭐ Write a review</button>
+        <div class="side-pair">
+          <button class="theme-toggle side" type="button" data-theme-toggle aria-label="Switch between light and dark mode">🌙 Dark</button>
+          <button class="theme-toggle side perf" type="button" data-perf-toggle aria-pressed="false" title="Turns off the animated background to save battery and keep things fast">⚡ Performance</button>
+        </div>
+        <button class="text-btn side-signout" id="signOutBtn" type="button">← Sign Out</button>
+        <p class="side-links">BioSpine v5.5 · <a href="/privacy/" target="_blank" rel="noopener">Privacy</a> · <a href="/terms/" target="_blank" rel="noopener">Terms</a> · <a href="/disclaimer/" target="_blank" rel="noopener">Health</a></p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="banner" id="verifyBanner" hidden>
+        <span>📧 Please confirm your email address - check your inbox.</span>
+        <button type="button" class="secondary" id="resendVerifyBtn">Resend email</button>
+      </div>
+      <div class="banner demo" id="guestBanner" hidden>
+        <span>You're in <b>demo mode</b>: nothing is saved and AI chat is off.</span>
+        <button type="button" class="primary" id="guestSignupBtn">Create free account</button>
+      </div>
+      <div class="banner install" id="installBanner" hidden>
+        <span>📲 Install BioSpine on your device for one-tap access.</span>
+        <button type="button" class="primary" id="installBtn">Install</button>
+        <button type="button" class="text-btn" id="installDismiss" aria-label="Dismiss">✕</button>
+      </div>
+      <header class="topbar">
+        <div>
+          <h1 id="pageTitle">Dashboard</h1>
+          <p id="connectionLine" style="color:var(--muted); font-size:12px;">Device not connected • Ready to pair</p>
+        </div>
+        <div class="top-actions">
+          <button class="secondary hide-mobile" id="pipBtn" title="Open a small always-on-top window">🗗 Floating mini-window</button>
+          <button class="secondary" id="calibrateBtn" title="Sit in your best posture, then press this">🎯 Set my good posture</button>
+          <button class="secondary hide-mobile" id="serialBtn">Connect USB</button>
+          <button class="primary" id="connectBtn">Connect Bluetooth</button>
+          <button class="secondary theme-btn" type="button" data-theme-toggle aria-label="Switch between light and dark mode">🌙</button>
+        </div>
+      </header>
+
+      <!-- TAB 1: DASHBOARD -->
+      <section class="view active" id="dashboard">
+        <div class="hero-status good" id="statusCard">
+          <div class="hero-content">
+            <div class="eyebrow-badge" id="modeBadge">FOCUS MODE</div>
+            <h2 id="statusText">POSTURE OPTIMAL</h2>
+            <p id="statusHint" style="color:var(--muted); font-size:13px;">Your neck and back are lined up nicely. Keep it up!</p>
+          </div>
+          <div class="hero-right">
+            <div class="posture-ring" id="ring">
+              <span id="ringValue">0.0°</span>
+              <small>LEAN</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="metrics-grid">
+          <article class="metric highlight-blue">
+            <span>Neck Strain</span>
+            <strong id="cervicalLoad">11 lbs</strong>
+            <small id="cervicalNote">5.0 kg (Normal)</small>
+          </article>
+          <article class="metric highlight-green">
+            <span>Risk Level</span>
+            <strong id="rulaScore">Level 1</strong>
+            <small id="rulaNote">Very low risk</small>
+          </article>
+          <article class="metric">
+            <span>Posture Score</span>
+            <strong id="score">0%</strong>
+            <small>Time sitting well</small>
+          </article>
+          <article class="metric">
+            <span>Good-Posture Streak</span>
+            <strong id="streak">0s</strong>
+            <small id="streakNote">Right now, in a row</small>
+          </article>
+          <article class="metric highlight-blue">
+            <span>🔥 Day Streak</span>
+            <strong id="dayStreak">0 days</strong>
+            <small id="dayStreakNote">Score 60%+ today to start one</small>
+          </article>
+          <article class="metric">
+            <span>Slouch Alerts</span>
+            <strong id="alerts">0</strong>
+            <small>Alarm reminders</small>
+          </article>
+          <article class="metric">
+            <span>Slouch Type</span>
+            <strong id="strainType" style="font-size:16px;">None</strong>
+            <small id="strainDetail">Sitting evenly</small>
+          </article>
+        </div>
+
+        <article class="panel goal-panel">
+          <div class="panel-head">
+            <div><h3>🎯 Today's goal</h3><p id="goalNote">Wear time today</p></div>
+            <b id="goalPct" class="goal-pct">0%</b>
+          </div>
+          <div class="goal-bar"><i id="goalFill"></i></div>
+          <div class="goal-meta"><span id="goalText">0 / 120 min</span>
+            <label class="goal-set">Daily goal <select id="goalSelect"><option value="30">30 min</option><option value="60">1 hour</option><option value="120">2 hours</option><option value="240">4 hours</option><option value="360">6 hours</option><option value="480">8 hours</option></select></label>
+          </div>
+          <div class="badges" id="badgeRow" aria-label="Achievements"></div>
+        </article>
+
+        <div class="two-col">
+          <!-- POSTURE TREND (line graph) -->
+          <article class="panel trend-panel">
+            <div class="panel-head">
+              <div>
+                <h3>Posture trend</h3>
+                <p>How far you lean, live</p>
+              </div>
+              <span class="live-dot">● LIVE</span>
+            </div>
+            <div class="chart-box"><canvas id="angleChart"></canvas></div>
+          </article>
+
+          <!-- TODAY (donut: correct vs needs-correction time) -->
+          <article class="panel today-panel">
+            <div class="panel-head">
+              <div>
+                <h3>Today</h3>
+                <p>Good vs slouching time</p>
+              </div>
+            </div>
+            <div class="donut-wrap">
+              <div class="donut-box"><canvas id="timeChart" width="180" height="180"></canvas></div>
+              <div class="donut-label">
+                <strong id="todayScore">0%</strong>
+                <span>posture<br>score</span>
+              </div>
+            </div>
+            <div class="legend">
+              <span><i class="good-dot"></i>Correct <b id="correctPct">0%</b></span>
+              <span><i class="bad-dot"></i>Slouching <b id="badPct">100%</b></span>
+            </div>
+            <button class="btn-export" id="exportPdfBtn">📄 Download my posture report (PDF)</button>
+          </article>
+        </div>
+
+        <!-- 3D SPINE -->
+        <article class="panel">
+          <div class="panel-head">
+            <h3>Your spine, live in 3D</h3>
+            <span id="pitchReadout" style="color:#4f8bf9; font-size:12px; font-weight:700;">Forward lean: 0.0°</span>
+          </div>
+          <div id="spine3dContainer" class="spine-3d-canvas"></div>
+          <div class="spine-legend" style="display:flex; justify-content:center; gap:14px; font-size:11px; color:var(--muted); margin-top:8px;">
+            <span><i class="cervical-dot"></i> Neck bones</span>
+            <span><i class="thoracic-dot"></i> Upper-back bones</span>
+            <span id="rollReadout">Sideways lean: 0.0°</span>
+          </div>
+        </article>
+
+        <!-- AI COPILOT -->
+        <article class="panel ai-copilot-panel ai-only">
+          <div class="panel-head">
+            <div>
+              <div class="ai-sparkle-tag">✦ AI PHYSIO</div>
+              <h3>Ask your AI Physio</h3>
+            </div>
+            <button class="primary" id="generateAiReportBtn">✨ Check my posture with AI</button>
+          </div>
+          <div id="aiLoadingState" class="ai-loading" style="display:none; padding:15px; color:#4f8bf9;">
+            The AI is looking at your session (this can take up to 20 seconds)...
+          </div>
+          <div id="aiOutputContainer" class="ai-output" style="margin-top:10px;">
+            <p style="color:var(--muted); font-size:13px;">Wear your device for a few minutes, then press the button to get simple, personal tips.</p>
+          </div>
+          <div class="ai-chat-section" style="margin-top:15px; border-top:1px solid var(--line); padding-top:10px;">
+            <div class="ai-chat-box" id="aiChatBox">
+              <div class="chat-msg ai">Hello! I'm your BioSpine AI Physio. Ask me anything about your posture, neck tension, or desk ergonomics!</div>
+            </div>
+            <div class="ai-input-row" style="display:flex; gap:8px; margin-top:8px;">
+              <input type="text" id="aiChatInput" placeholder="Ask your AI physio..." maxlength="500" enterkeyhint="send" autocomplete="off" style="flex:1; padding:8px; border-radius:6px; background:var(--input); color:var(--text); border:1px solid var(--line);">
+              <button class="secondary" id="aiSendChatBtn">Ask AI</button>
+            </div>
+            <p class="ai-disclaimer">AI can make mistakes. General wellness tips only, not medical advice. If you have numbness, tingling or severe pain, see a doctor. <a href="/disclaimer/" target="_blank" rel="noopener">Learn more</a></p>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <h3>Posture activity log</h3>
+            <button class="text-btn" id="clearEvents">Clear</button>
+          </div>
+          <div id="events" class="events empty">Nothing yet. Connect your device (or start the demo) to begin.</div>
+        </article>
+      </section>
+
+      <!-- TAB: POSTURE LAB (interactive Biomechanics & RULA) -->
+      <section class="view" id="biomechanics">
+        <div class="section-title">
+          <h2>🔬 Posture Lab</h2>
+          <p style="color:var(--muted); font-size:13px;">Play with the science: see what leaning does to your neck, check your own desk posture, and test what you know.</p>
+        </div>
+        <div class="lab-tabs" role="tablist" aria-label="Posture Lab">
+          <button class="lab-tab active" type="button" data-lab="neck" role="tab">🪢 Neck Load</button>
+          <button class="lab-tab" type="button" data-lab="risk" role="tab">🧍 Desk Risk Check</button>
+          <button class="lab-tab" type="button" data-lab="quiz" role="tab">🧠 Quick Quiz</button>
+          <button class="lab-tab" type="button" data-lab="learn" role="tab">📖 The Science</button>
+        </div>
+
+        <!-- 1. neck load -->
+        <div class="lab-pane active" id="lab-neck">
+          <div class="lab-grid">
+            <article class="panel">
+              <div class="panel-head"><div><h3>How heavy is your head when you lean?</h3><p>Drag the slider. Your head weighs about 5 kg (11 lbs) when it sits straight, but leaning forward makes your neck work much harder.</p></div></div>
+              <div class="lab-stage"><svg viewBox="0 0 300 300" id="labFig" class="lab-fig" role="img" aria-label="Person leaning their head forward">
+                <rect width="300" height="300" rx="18" class="demo-bg"/>
+                <line x1="20" y1="274" x2="280" y2="274" class="demo-floor"/>
+                <rect x="70" y="170" width="22" height="104" rx="9" class="demo-chair"/><rect x="70" y="230" width="120" height="16" rx="7" class="demo-chair"/>
+                <rect x="96" y="124" width="40" height="112" rx="18" class="demo-torso"/>
+                <g id="labHead" style="transform-origin:116px 124px;">
+                  <rect x="109" y="72" width="14" height="58" rx="7" class="demo-neck"/>
+                  <circle cx="116" cy="52" r="28" class="demo-head"/><circle cx="126" cy="48" r="3.4" class="demo-eye"/>
+                  <line id="labArrow" x1="116" y1="52" x2="116" y2="14" class="lab-arrow"/>
+                </g>
+                <circle cx="116" cy="128" r="7" class="demo-pod"/>
+                <g id="labWeight"><rect x="196" y="28" width="92" height="58" rx="12" class="demo-badge"/><text x="242" y="55" text-anchor="middle" class="demo-badge-num" id="labLbs">12 lbs</text><text x="242" y="74" text-anchor="middle" class="demo-badge-sub" id="labKg">5 kg</text></g>
+              </svg></div>
+              <label class="demo-slider">Head lean <output id="labDeg">0°</output><input type="range" id="labRange" min="0" max="60" value="0" aria-label="Head lean in degrees"></label>
+              <div class="lab-actions"><button class="secondary" type="button" id="labLiveBtn">📡 Use my live posture</button><button class="text-btn" type="button" id="labResetBtn">Reset</button></div>
+            </article>
+            <article class="panel">
+              <h3>What it means</h3>
+              <div class="lab-warn" id="labWarn" role="alert" hidden></div>
+              <div class="load-meter"><i id="labMeter"></i></div>
+              <p class="lab-big" id="labLike">Like carrying a bowling ball</p>
+              <p class="lab-say" id="labSay">Perfect! Your neck muscles are relaxed.</p>
+              <div class="lab-mini">
+                <div><span>Extra load vs sitting straight</span><b id="labExtra">+0 lbs</b></div>
+                <div><span>Risk level</span><b id="labRisk">Very low</b></div>
+              </div>
+              <h4 class="sub-h">Quick fixes</h4>
+              <ul class="lab-tips" id="labTips"></ul>
+              <button class="primary" type="button" data-goto="breaktime">🧘 Try a 1-minute back break</button>
+            </article>
+          </div>
+        </div>
+
+        <!-- 2. desk risk check -->
+        <div class="lab-pane" id="lab-risk">
+          <div class="lab-grid">
+            <article class="panel">
+              <h3>Desk Risk Check <small class="muted-inline">(a simple, RULA-style estimate)</small></h3>
+              <p style="color:var(--muted);font-size:12px;margin:6px 0 10px">Choose what describes you while you work. RULA is a standard workplace check for arms, neck and back. This is a quick estimate, not an official assessment.</p>
+              <div class="rula-form">
+                <label>Upper arm<select id="rulaArm"><option value="1">Close to the body</option><option value="2">Slightly forward</option><option value="3">Raised or propped out</option><option value="4">Above shoulder</option></select></label>
+                <label>Lower arm / elbow<select id="rulaElbow"><option value="1">About 90° (right angle)</option><option value="2">Too straight or too bent</option></select></label>
+                <label>Wrist<select id="rulaWrist"><option value="1">Straight</option><option value="2">Bent a little</option><option value="3">Bent a lot</option></select></label>
+                <label>Neck<select id="rulaNeck"><option value="1">Upright</option><option value="2">Bent forward a little</option><option value="3">Bent forward a lot</option><option value="4">Tilted back</option></select></label>
+                <label>Back<select id="rulaTrunk"><option value="1">Sitting tall, supported</option><option value="2">Leaning forward a little</option><option value="3">Leaning forward a lot</option><option value="4">Twisted or very bent</option></select></label>
+                <label class="rula-check"><input type="checkbox" id="rulaStatic"> <span>I stay in this position for more than 10 minutes at a time</span></label>
+              </div>
+            </article>
+            <article class="panel">
+              <h3>Your result</h3>
+              <div class="rula-dial" id="rulaDial"><b id="rulaNum">1</b><span>of 7</span></div>
+              <p class="lab-big" id="rulaTitle">Level 1 - Looks good</p>
+              <p class="lab-say" id="rulaAdvice">Your posture is fine. Keep moving now and then.</p>
+              <div class="rula-cards" id="rulaCards"></div>
+              <h4 class="sub-h">Where to improve</h4>
+              <ul class="lab-tips" id="rulaTips"></ul>
+              <button class="secondary" type="button" id="rulaFromLive">📡 Fill the neck from my live posture</button>
+            </article>
+          </div>
+        </div>
+
+        <!-- 3. quiz -->
+        <div class="lab-pane" id="lab-quiz">
+          <article class="panel quiz-card">
+            <div class="panel-head"><div><h3>Posture quick quiz</h3><p id="quizProgress">Question 1 of 5</p></div><span class="xp-pop" id="quizBest"></span></div>
+            <h3 id="quizQ" class="quiz-q"></h3>
+            <div class="quiz-options" id="quizOpts"></div>
+            <p class="lab-say" id="quizFeedback"></p>
+            <div class="lab-actions"><button class="primary" type="button" id="quizNext" hidden>Next question →</button><button class="secondary" type="button" id="quizRestart" hidden>↻ Play again</button></div>
+          </article>
+        </div>
+
+        <!-- 4. science -->
+        <div class="lab-pane" id="lab-learn">
+          <div class="bio-grid">
+            <article class="panel">
+              <h3>Neck load by lean angle</h3>
+              <p style="color:var(--muted); font-size:12px; margin-bottom:10px;">Research (Hansraj, 2014) estimated how much force the neck carries as the head tips forward:</p>
+              <div class="tbl-wrap"><table class="bio-table">
+                <thead><tr><th>Lean</th><th>Force on neck</th><th>In kg</th><th>What it means</th></tr></thead>
+                <tbody>
+                  <tr><td>0° (straight)</td><td>10-12 lbs</td><td>~5 kg</td><td>Relaxed and healthy</td></tr>
+                  <tr><td>15° (small lean)</td><td>27 lbs</td><td>~12 kg</td><td>Neck muscles start to tire</td></tr>
+                  <tr class="warning-row"><td>30° (big lean)</td><td>40 lbs</td><td>~18 kg</td><td>Heavy strain if you stay like this</td></tr>
+                  <tr class="danger-row"><td>45°+ (head down)</td><td>49-60 lbs</td><td>22-27 kg</td><td>Very high strain; stiff neck and shoulders likely</td></tr>
+                </tbody>
+              </table></div>
+            </article>
+            <article class="panel">
+              <h3>What is RULA?</h3>
+              <p style="color:var(--muted); font-size:12px; margin-bottom:10px;">A standard workplace check of how arms, neck and back are positioned. The final score tells you how soon to act:</p>
+              <div class="rula-cards">
+                <div class="rula-card rula-1"><strong>Level 1 · score 1-2</strong><span>Fine. Just keep moving now and then.</span></div>
+                <div class="rula-card rula-2"><strong>Level 2 · score 3-4</strong><span>Small changes may help. Keep an eye on it.</span></div>
+                <div class="rula-card rula-3"><strong>Level 3 · score 5-6</strong><span>Please change your set-up soon.</span></div>
+                <div class="rula-card rula-4"><strong>Level 4 · score 7</strong><span>Change your set-up as soon as possible.</span></div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: ANALYTICS & TRENDS -->
+      <section class="view" id="analytics">
+        <div class="section-title">
+          <h2>My Progress</h2>
+          <p style="color:var(--muted); font-size:13px;" id="analyticsSource">No data yet - connect your device or start the demo on the My Device page.</p>
+        </div>
+        <div class="metrics-grid">
+          <article class="metric"><span>Average Forward Lean</span><strong id="avg">0.0°</strong><small>Over your whole session</small></article>
+          <article class="metric"><span>Typical Forward Lean</span><strong id="median">0.0°</strong><small>The middle value</small></article>
+          <article class="metric"><span>Worst Forward Lean</span><strong id="maxDev">0.0°</strong><small>Highest this session</small></article>
+          <article class="metric"><span>Readings Received</span><strong id="samples">0</strong><small>From your sensor</small></article>
+        </div>
+        <div class="metrics-grid">
+          <article class="metric"><span>Sessions Logged</span><strong id="lifeSessions">0</strong><small>Saved in Session History</small></article>
+          <article class="metric"><span>Total Monitored</span><strong id="lifeTime">0s</strong><small>All sessions</small></article>
+          <article class="metric"><span>7-Day Score</span><strong id="lifeWeekScore">-</strong><small>Average posture score</small></article>
+          <article class="metric"><span>Best Day (7 days)</span><strong id="lifeBestDay">-</strong><small id="lifeBestNote">No data yet</small></article>
+        </div>
+        <div class="panel progress-panel">
+          <div class="panel-head"><div><h3>📈 Your progress</h3><p>First week with data vs your latest 7 days</p></div></div>
+          <div class="compare" id="progressCompare"><div class="empty">Record a few sessions on different days to see your before/after comparison.</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Your last 7 days</h3><p>Posture score for each day</p></div>
+          <div class="chart-box week-box"><canvas id="weekChart"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Where slouching happened</h3><p>What kind of slouching took most of your time (last 7 days)</p></div>
+          <div id="strainBars"></div>
+        </div>
+      </section>
+
+      <!-- TAB 4: SESSION HISTORY -->
+      <section class="view" id="history">
+        <div class="section-title">
+          <h2>Session History</h2>
+          <p style="color:var(--muted); font-size:13px;">Every session is saved automatically. Download your history as an Excel sheet any time.</p>
+          <p class="muted-p small" id="syncStatus"></p>
+        </div>
+        <article class="panel my-report" id="myReport">
+          <div class="panel-head">
+            <div><h3>📋 My report</h3><p>A simple summary in plain words, with the details underneath.</p></div>
+            <div class="history-actions">
+              <select id="reportRange" aria-label="Report period"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="0">Everything</option></select>
+              <button class="primary" type="button" id="reportPdfBtn">📄 PDF</button>
+              <button class="secondary" type="button" id="reportXlsxBtn">📗 Excel</button>
+            </div>
+          </div>
+          <div id="reportBody"><div class="empty">Record a session to see your report.</div></div>
+        </article>
+        <div class="panel">
+          <div class="panel-head">
+            <div><h3>Saved sessions</h3><p id="historyNote"></p></div>
+            <div class="history-actions">
+              <button class="primary" id="exportXlsxBtn" type="button">📗 Download Excel</button>
+              <button class="secondary" id="exportJsonBtn" type="button">Backup file (.json)</button>
+              <button class="danger-btn" id="clearHistoryBtn" type="button">Clear history</button>
+            </div>
+          </div>
+          <div class="history-list" id="historyList"><div class="empty">No sessions recorded yet.</div></div>
+          <div class="load-more"><button class="secondary" id="loadMoreSessionsBtn" type="button" hidden>Load older sessions</button></div>
+        </div>
+        <div class="panel" id="sessionDetail" hidden><div id="detailBody"></div></div>
+      </section>
+
+      <!-- TAB: CHATS & DOUBTS (dedicated AI conversation history) -->
+      <section class="view ai-only" id="chats">
+        <div class="section-title">
+          <h2>Chats with your AI Physio</h2>
+          <p style="color:var(--muted); font-size:13px;" id="chatHistoryNote">Every question you ask the AI Physio on the Dashboard is saved here.</p>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <div><h3>Conversation history</h3><p>Newest first · stored on your account, not just this browser</p></div>
+          </div>
+          <div class="history-list chat-history-list" id="chatHistoryList"><div class="empty">No AI conversations yet.</div></div>
+        </div>
+      </section>
+
+      <!-- TAB: REWARDS & QUESTS -->
+      <section class="view" id="rewards">
+        <div class="section-title"><h2>🎮 Rewards &amp; Quests</h2><p style="color:var(--muted); font-size:13px;">Good posture earns XP. Level up, finish today's quests and collect badges.</p></div>
+        <article class="panel level-hero" id="levelHero">
+          <div class="lv-ring" id="lvRing"><b id="lvNum">1</b><span>LEVEL</span></div>
+          <div class="lv-info">
+            <h3 id="lvTitle">Rookie</h3>
+            <div class="xp-bar"><i id="lvBar"></i></div>
+            <p id="lvText">0 XP · 100 XP to level 2</p>
+            <div class="xp-rules"><span>⏱ 2 XP per minute worn × your score</span><span>🎯 +10 / +25 XP for 75% / 90%+ sessions</span><span>🧘 +20 XP per back break</span><span>🏅 +50 XP per badge</span><span>✅ +15 XP per quest</span></div>
+          </div>
+          <div class="flame" id="flameCard"><span class="flame-icon" id="flameIcon">🔥</span><b id="flameNum">0</b><small>day streak</small></div>
+        </article>
+        <div class="two-col">
+          <article class="panel">
+            <div class="panel-head"><div><h3>🗓 Today's quests</h3><p id="questNote">New quests every day</p></div></div>
+            <div class="quests" id="questList"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><h3>⚡ Next up</h3><p>Closest badges to unlock</p></div></div>
+            <div class="next-up" id="nextUp"></div>
+          </article>
+        </div>
+        <article class="panel">
+          <div class="panel-head"><div><h3>🏅 Badge collection</h3><p id="badgeCount">0 unlocked</p></div></div>
+          <div class="badge-grid" id="badgeGrid"></div>
+        </article>
+      </section>
+
+      <!-- TAB: BACK BREAK -->
+      <section class="view" id="breaktime">
+        <div class="section-title"><h2>🧘 Back Break</h2><p style="color:var(--muted); font-size:13px;">Sitting for hours is hard on your back. Get a reminder at the interval you choose, then do a 1-minute stretch.</p></div>
+        <div class="two-col">
+          <article class="panel">
+            <div class="panel-head"><div><h3>⏰ Break reminders</h3><p id="breakStatus">Reminders are off</p></div><label class="switch-row inline"><input type="checkbox" id="breakToggle"><i></i></label></div>
+            <div class="chip-row" id="breakEvery" role="radiogroup" aria-label="Remind me every">
+              <button type="button" class="chip" data-min="30">30 min</button>
+              <button type="button" class="chip" data-min="45">45 min</button>
+              <button type="button" class="chip active" data-min="60">Every hour</button>
+              <button type="button" class="chip" data-min="90">90 min</button>
+              <button type="button" class="chip" data-min="120">2 hours</button>
+            </div>
+            <label class="switch-row"><span>Meeting-friendly mode<br><small>Silent: no sound, no big pop-up. Just a small quiet note in the corner of the screen.</small></span><input type="checkbox" id="breakQuiet"><i></i></label>
+            <div class="break-countdown" id="breakCountdown"><b id="breakLeft">--:--</b><span id="breakLeftNote">until your next back break</span></div>
+            <div class="lab-actions"><button class="primary" type="button" id="breakNowBtn">🧘 Take a break now</button><button class="secondary" type="button" id="breakSnoozeBtn">😶 In a meeting: remind me in 15 min</button></div>
+            <p class="ai-note">The timer runs while this page is open, even without your device. Keep the tab open (or install the app) so reminders can reach you.</p>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><h3>1-minute back relief</h3><p>Pick a stretch, press start and follow along</p></div></div>
+            <div class="stretch-list" id="stretchList"></div>
+          </article>
+        </div>
+        <article class="panel stretch-stage" id="stretchStage" hidden>
+          <div class="stretch-head"><h3 id="stretchName">Stretch</h3><button class="text-btn" type="button" id="stretchClose">✕ Close</button></div>
+          <div class="stretch-body"><div class="stretch-timer" id="stretchTimer"><b id="stretchSecs">60</b><span>sec</span></div>
+          <ol class="stretch-steps" id="stretchSteps"></ol></div>
+          <div class="lab-actions"><button class="primary" type="button" id="stretchStart">▶ Start</button><button class="secondary" type="button" id="stretchDone">✔ I'm done (+20 XP)</button></div>
+        </article>
+      </section>
+
+      <!-- TAB: MY DEVICE -->
+      <section class="view" id="device">
+        <div class="section-title">
+          <h2>⌁ My Device</h2>
+          <p class="compat-note" id="compatNote" hidden></p>
+          <p style="color:var(--muted); font-size:13px;">Three simple steps: connect, set your good posture, check it works.</p>
+        </div>
+
+        <article class="panel dev-status" id="devStatus">
+          <div class="dev-orb" id="devOrb"><span id="devOrbIcon">🔌</span></div>
+          <div class="dev-status-text">
+            <h3 id="deviceName">BioSpine-Wearable</h3>
+            <p id="deviceState">Not connected</p>
+            <div class="dev-chips">
+              <span class="dev-chip">Connected by <b id="transport">—</b></span>
+              <span class="dev-chip">Sensor data <b id="telemetry">Standby</b></span>
+            </div>
+          </div>
+        </article>
+
+        <div class="dev-steps">
+          <article class="panel dev-step">
+            <div class="dev-step-head"><b class="step-num">1</b><div><h3>Connect</h3><p>Pick how to connect your sensor</p></div></div>
+            <button class="primary wide" id="deviceConnectBle">📶 Bluetooth</button>
+            <button class="secondary wide" id="deviceConnectUsb">🔌 USB cable</button>
+            <details class="acct-details"><summary>📡 Wi-Fi (advanced)</summary>
+              <p class="ai-note" style="margin:6px 0">Join the sensor's own Wi-Fi network (BioSpine-ESP32), then connect:</p>
+              <input id="wsUrl" value="ws://192.168.4.1:81" aria-label="Wi-Fi address of the sensor">
+              <button class="secondary wide" id="wsConnect">Connect over Wi-Fi</button>
+            </details>
+            <button class="secondary wide demo-btn" id="demoBtn" type="button">▶ No sensor? Start demo data</button>
+          </article>
+
+          <article class="panel dev-step">
+            <div class="dev-step-head"><b class="step-num">2</b><div><h3>Set your good posture</h3><p>Sit up tall and relaxed, then press the button</p></div></div>
+            <div class="calibration-box">
+              <strong id="baseline">Good posture: not saved yet</strong>
+              <span id="calStatus" style="display:block; font-size:11px; color:var(--muted); margin-top:4px;">Ready - hold still for 3 seconds</span>
+            </div>
+            <button class="secondary wide" id="calibrateDevice">🎯 Save my good posture (3 sec)</button>
+          </article>
+
+          <article class="panel dev-step">
+            <div class="dev-step-head"><b class="step-num">3</b><div><h3>Check you can hear it</h3><p>Play the alarm sound</p></div></div>
+            <button class="secondary wide" id="testAlarmBtn">🔊 Test the alarm sound</button>
+            <div class="device-row"><span>Readings received</span><b id="pktStats">0 good / 0 lost</b></div>
+            <div class="device-row"><span>Signal quality</span><b id="devSignal">—</b></div>
+          </article>
+        </div>
+
+        <article class="panel dev-live">
+          <div class="panel-head"><div><h3>Live sensor readings</h3><p>What your sensor feels right now</p></div><span class="live-dot" id="devLiveDot">● WAITING</span></div>
+          <div class="gauge-row">
+            <div class="gauge-card"><svg viewBox="0 0 120 80" class="gauge" id="gaugePitch" aria-label="Forward lean gauge"><path d="M10 70 A50 50 0 0 1 110 70" class="g-track"/><path d="M10 70 A50 50 0 0 1 110 70" class="g-fill" id="gPitchFill" pathLength="100"/><line x1="60" y1="70" x2="60" y2="26" class="g-needle" id="gPitchNeedle"/><circle cx="60" cy="70" r="4" class="g-hub"/></svg>
+              <b id="gPitchVal">0.0°</b><span>Forward / back lean</span></div>
+            <div class="gauge-card"><svg viewBox="0 0 120 80" class="gauge" id="gaugeRoll" aria-label="Sideways lean gauge"><path d="M10 70 A50 50 0 0 1 110 70" class="g-track"/><path d="M10 70 A50 50 0 0 1 110 70" class="g-fill" id="gRollFill" pathLength="100"/><line x1="60" y1="70" x2="60" y2="26" class="g-needle" id="gRollNeedle"/><circle cx="60" cy="70" r="4" class="g-hub"/></svg>
+              <b id="gRollVal">0.0°</b><span>Sideways lean</span></div>
+            <div class="gauge-card spark-card"><svg viewBox="0 0 220 80" class="spark" id="devSpark" preserveAspectRatio="none"><polyline id="devSparkLine" points="" fill="none"/></svg><b id="devRate">0 / sec</b><span>Readings per second</span></div>
+          </div>
+        </article>
+      </section>
+
+      <!-- TAB 6: SETTINGS & AI -->
+      <section class="view" id="settings">
+        <div class="section-title">
+          <h2>Settings</h2>
+          <p style="color:var(--muted); font-size:13px;">Choose how strict BioSpine is and how it reminds you.</p>
+        </div>
+        <div class="settings-grid">
+          <article class="panel" id="bodyPanel">
+            <h3>⚖ My body</h3>
+            <p class="muted-p">Enter your height and weight to see your BMI. It is a rough guide for adults (18+), not a medical measure.</p>
+            <div class="body-row">
+              <label>Height (cm)<input type="number" id="bodyHeight" inputmode="decimal" min="50" max="250" step="0.1" placeholder="e.g. 170"></label>
+              <label>Weight (kg)<input type="number" id="bodyWeight" inputmode="decimal" min="15" max="350" step="0.1" placeholder="e.g. 65"></label>
+            </div>
+            <div class="lab-actions"><button class="primary" type="button" id="bodySave">Calculate &amp; save</button><span class="muted-p small" id="bodyMsg"></span></div>
+            <div class="bmi-card" id="bmiCard" hidden>
+              <div class="bmi-num"><b id="bmiNum">–</b><span>BMI</span></div>
+              <div class="bmi-text"><b id="bmiCat">–</b><p id="bmiAdvice"></p>
+                <div class="bmi-scale"><i class="s1"></i><i class="s2"></i><i class="s3"></i><i class="s4"></i><u id="bmiMark"></u></div>
+                <div class="bmi-ticks"><span>15</span><span>18.5</span><span>25</span><span>30</span><span>40</span></div></div>
+            </div>
+          </article>
+          <article class="panel">
+            <h3>Choose your mode</h3>
+            <div class="preset-group">
+              <label class="radio-card">
+                <input type="radio" name="ergoMode" value="focus" checked>
+                <div>
+                  <strong>Focus Mode (recommended)</strong>
+                  <span>Alarm only if you slouch for 3 seconds. Stops when you sit up straight.</span>
+                </div>
+              </label>
+              <label class="radio-card">
+                <input type="radio" name="ergoMode" value="meeting">
+                <div>
+                  <strong>Meeting Mode (silent)</strong>
+                  <span>No sound at all. Only quiet on-screen reminders.</span>
+                </div>
+              </label>
+              <label class="radio-card">
+                <input type="radio" name="ergoMode" value="rehab">
+                <div>
+                  <strong>Training Mode</strong>
+                  <span>Stricter limit (15°) for focused 30-minute posture practice.</span>
+                </div>
+              </label>
+            </div>
+          </article>
+
+          <article class="panel">
+            <h3>How strict should it be?</h3>
+            <label>Forward-lean alert angle <output id="angleOut">18°</output>
+              <input type="range" id="angleRange" min="10" max="30" value="18">
+            </label>
+            <label>Sit-up margin (how far to correct before the alert stops) <output id="safeZoneOut">±3°</output>
+              <input type="range" id="safeZoneRange" min="1" max="8" value="3">
+            </label>
+            <label>Sideways-lean alert angle <output id="lateralOut">12°</output>
+              <input type="range" id="lateralRange" min="5" max="25" value="12">
+            </label>
+          </article>
+
+          <article class="panel">
+            <h3>Alerts</h3>
+            <label class="switch-row">
+              <span>Pop-up notifications</span>
+              <input type="checkbox" id="notifyToggle" checked><i></i>
+            </label>
+            <label class="switch-row">
+              <span>🔔 Sound alarm when you slouch<br><small>Plays an alarm sound until you sit up. Always silent in Meeting Mode.</small></span>
+              <input type="checkbox" id="soundToggle"><i></i>
+            </label>
+            <div class="alarm-box">
+              <label>Volume <input type="range" id="alarmVolume" min="5" max="100" value="80" aria-label="Alarm volume"></label>
+              <label>Repeat while slouching
+                <select id="alarmRepeat"><option value="0">Play once</option><option value="8">Every 8 seconds</option><option value="15">Every 15 seconds</option><option value="30">Every 30 seconds</option></select></label>
+              <button class="secondary" type="button" id="alarmTest">🔊 Test the alarm</button>
+            </div>
+            <label class="switch-row">
+              <span>Big on-screen reminder</span>
+              <input type="checkbox" id="popupToggle" checked><i></i>
+            </label>
+            <label class="switch-row">
+              <span>⚡ Performance mode<br><small>Turns off the animated 3D background and extra effects. Faster and lighter on battery. Your choice is saved.</small></span>
+              <input type="checkbox" id="perfToggle"><i></i>
+            </label>
+            <label class="switch-row">
+              <span>🧭 Fix directions<br><small>Turn on if your sensor shows forward as left, left as forward, back as right or right as back (older sensor software).</small></span>
+              <input type="checkbox" id="swapAxes"><i></i>
+            </label>
+            <label class="switch-row">
+              <span>🧪 Test mode: save demo sessions to my account<br><small>Normally demo data stays on this device only. Turn on to see demo sessions on other devices and on the staff pages.</small></span>
+              <input type="checkbox" id="syncDemoToggle"><i></i>
+            </label>
+            <div class="switch-row"><span>Back-break reminders<br><small>Hourly or your own interval, with a silent meeting mode</small></span><button class="secondary" type="button" data-goto="breaktime">Open</button></div>
+          </article>
+          <article class="panel account-panel" id="accountPanel">
+            <h3>Account &amp; privacy</h3>
+            <p class="acct-line">Signed in as <b id="acctEmail">-</b> <span id="acctVerified" class="pill-ok"></span></p>
+            <label class="switch-row">
+              <span>Weekly progress email<br><small>A short summary every Monday</small></span>
+              <input type="checkbox" id="weeklyToggle" checked><i></i>
+            </label>
+            <div class="switch-row"><span>⭐ Your review<br><small>Write or change your review any time</small></span><button class="secondary" type="button" data-review-open>Write</button></div>
+            <details class="acct-details"><summary>Change password</summary>
+              <input type="password" id="pwCurrent" placeholder="Current password" autocomplete="current-password">
+              <input type="password" id="pwNew" placeholder="New password (min. 8 characters)" autocomplete="new-password">
+              <button class="secondary" id="pwChangeBtn" type="button">Update password</button>
+            </details>
+            <div class="acct-actions">
+              <button class="secondary" id="installBtn2" type="button" hidden>📲 Install app</button>
+              <button class="secondary" id="exportDataBtn" type="button">⬇ Download my data</button>
+              <button class="secondary" id="signOutBtn2" type="button">Sign out</button>
+            </div>
+            <details class="acct-details danger"><summary>Delete my account</summary>
+              <p>This permanently deletes your account, session history, review and chats. It cannot be undone.</p>
+              <input type="password" id="delPassword" placeholder="Confirm with your password" autocomplete="current-password">
+              <button class="danger-btn" id="deleteAccountBtn" type="button">Delete everything</button>
+            </details>
+            <p class="acct-links"><a href="/privacy/" target="_blank" rel="noopener">Privacy</a> · <a href="/terms/" target="_blank" rel="noopener">Terms</a> · <a href="/disclaimer/" target="_blank" rel="noopener">Health disclaimer</a> · <a href="/contact/" target="_blank" rel="noopener">Contact</a></p>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- CENTRE-SCREEN POSTURE CORRECTION POP-UP -->
+  <div class="posture-popup-layer" id="postureAlert" role="alertdialog" aria-live="assertive" aria-labelledby="ppTitle" hidden>
+    <div class="posture-popup">
+      <div class="pp-icon" id="ppIcon">!</div>
+      <h3 id="ppTitle">Correct your posture</h3>
+      <p id="ppText">Your posture needs attention.</p>
+      <div class="pp-dev"><strong id="ppDev">0.0°</strong><span id="ppLabel">off neutral</span></div>
+      <ul class="pp-tips" id="ppTips"></ul>
+      <div class="pp-actions" id="ppActions">
+        <button class="secondary" id="ppSnooze" type="button">Snooze 5 min</button>
+        <button class="primary" id="ppDismiss" type="button">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ONE-TIME REVIEW PROMPT (after the 5th saved session) -->
+  <div class="modal-overlay" id="reviewModal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="reviewTitle">
+    <div class="modal-card review-card">
+      <div class="review-emoji">🎉</div>
+      <h3 id="reviewTitle">You've finished 5 sessions!</h3>
+      <p class="muted-p" id="reviewIntro">How is BioSpine working for you? Your honest review helps us improve (it takes 20 seconds).</p>
+      <div class="stars" id="reviewStars" role="radiogroup" aria-label="Your rating">
+        <button type="button" data-v="1" aria-label="1 star">★</button><button type="button" data-v="2" aria-label="2 stars">★</button><button type="button" data-v="3" aria-label="3 stars">★</button><button type="button" data-v="4" aria-label="4 stars">★</button><button type="button" data-v="5" aria-label="5 stars">★</button>
+      </div>
+      <p class="star-word" id="reviewWord">Tap a star</p>
+      <input type="text" id="reviewName" maxlength="40" placeholder="Name to show (optional, e.g. Priya)" autocomplete="nickname">
+      <textarea id="reviewComment" maxlength="600" rows="3" placeholder="What do you like? What could be better? (optional)"></textarea>
+      <p class="muted-p small">Your email is never shown. If we feature your review on the home page, only your name and comment appear.</p>
+      <p id="reviewError" class="err-line" role="alert"></p>
+      <div class="modal-actions"><button class="secondary" id="reviewLater" type="button">Maybe later</button><button class="primary" id="reviewSend" type="button">Send review</button></div>
+    </div>
+  </div>
+
+  <canvas id="confetti" class="confetti" aria-hidden="true"></canvas>
+  <div class="quiet-note" id="quietBreakNote" hidden><span>🧘 Time for a back break</span><button type="button" id="quietBreakOpen" class="secondary">Do it</button><button type="button" id="quietBreakLater" class="text-btn">In 15 min</button></div>
+
+  <audio id="alarmAudio" preload="auto" src="{% static 'audio/alarm.mp3' %}"></audio>
+  <div class="toast" id="toast"></div>
+</body>
+</html>

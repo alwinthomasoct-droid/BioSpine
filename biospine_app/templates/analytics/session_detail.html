@@ -1,0 +1,38 @@
+{% extends "analytics/base.html" %}
+{% block title %}Session {{ s.start|date:"Y-m-d H:i" }} · {{ u.email }}{% endblock %}
+{% block content %}
+<p><a href="{% url 'analytics_user' u.id %}?tz={{ tzname }}#sessions">← {{ u.email }}</a>
+  {% if older %} · <a href="{% url 'analytics_session' u.id older.id %}?tz={{ tzname }}">← older session</a>{% endif %}
+  {% if newer %} · <a href="{% url 'analytics_session' u.id newer.id %}?tz={{ tzname }}">newer session →</a>{% endif %}</p>
+
+<div class="card">
+  <h1 style="margin:0;font-size:20px">{{ s.day }} · {{ s.range }} <span class="mut">({{ s.minutes }} min)</span></h1>
+  <div class="mut">{{ u.email }} · mode {{ s.mode }} · {% if s.source == "demo" %}<span class="pill s-never">demo session</span>{% else %}recorded with the device{% endif %} · times in {{ tzname }}</div>
+</div>
+
+<div class="grid k" style="margin-top:12px">
+  <div class="card kpi"><b>{{ s.score }}%</b><span>Posture score</span></div>
+  <div class="card kpi"><b>{{ s.alerts }}</b><span>Slouch alerts</span></div>
+  <div class="card kpi"><b class="dev-{{ s.dev_class }}">{{ s.avg|default_if_none:"–" }}°</b><span>Average forward lean</span></div>
+  <div class="card kpi"><b>{{ s.median|default_if_none:"–" }}°</b><span>Typical lean (median)</span></div>
+  <div class="card kpi"><b>{{ s.max|default_if_none:"–" }}°</b><span>Worst forward lean</span></div>
+  <div class="card kpi"><b>{{ s.max_roll|default_if_none:"–" }}°</b><span>Worst sideways lean</span></div>
+  <div class="card kpi"><b>{{ s.peak_load|default_if_none:"–" }}{% if s.peak_load %} lbs{% endif %}</b><span>Highest neck load</span></div>
+</div>
+
+<h2>Lean angle during this time period</h2>
+<div class="card">{% include "analytics/_trend.html" with chart=s.chart %}</div>
+
+<div class="grid g2" style="margin-top:12px">
+  <div class="card"><b>Good posture vs slouching</b>{% include "analytics/_donut.html" with d=s.donut %}</div>
+  <div class="card"><b>What kind of slouching</b>
+    {% if s.strain_donut %}{% include "analytics/_donut.html" with d=s.strain_donut %}{% else %}<p class="mut">No slouching breakdown stored for this session.</p>{% endif %}</div>
+</div>
+
+<h2>What happened</h2>
+<div class="card scroll"><table>
+  <tr><th>Time</th><th>Type</th><th>What</th><th>Detail</th></tr>
+  {% for e in s.events %}<tr><td>{{ e.time }}</td><td>{% if e.type == "bad" %}<span class="pill s-dormant">slouch</span>{% else %}<span class="pill s-active">{{ e.type|default:"note" }}</span>{% endif %}</td><td>{{ e.title }}</td><td class="mut" style="white-space:normal">{{ e.detail }}</td></tr>
+  {% empty %}<tr><td colspan="4" class="mut">No event log was stored for this session.</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

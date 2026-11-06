@@ -1,0 +1,37 @@
+{% extends "analytics/base.html" %}
+{% block title %}Reports · BioSpine Analytics{% endblock %}
+{% block content %}
+<h2>All-users report</h2>
+<div class="card">
+  <p style="margin-top:0">Plain-language findings, <b>week-by-week averages of every user</b>, every user's totals, the compliance spread and the reviews.</p>
+  <form class="f" method="get" action="{% url 'analytics_report_platform' 'xlsx' %}">
+    <input type="hidden" name="tz" value="{{ tzname }}">
+    <select name="weeks"><option value="4">Last 4 weeks</option><option value="8">Last 8 weeks</option><option value="12">Last 12 weeks</option><option value="26" selected>Last 26 weeks</option><option value="52">Last 52 weeks</option></select>
+    <button>⬇ Excel</button>
+    <button formaction="{% url 'analytics_report_platform' 'pdf' %}">⬇ PDF</button>
+  </form>
+</div>
+
+<h2>Raw data (CSV)</h2>
+<div class="card">
+  <a class="btn ghost" href="{% url 'analytics_export_users' %}">⬇ Users (with height / weight / BMI)</a>
+  <a class="btn ghost" href="{% url 'analytics_export_sessions' %}">⬇ Every session</a>
+  <div class="note">CSV files open in Excel. They never include passwords, login tokens or AI chat text.</div>
+</div>
+
+<h2>One person's report</h2>
+<div class="card">
+  <input id="find" placeholder="Type to find a user…" style="min-width:260px">
+  <div class="scroll" style="margin-top:8px;max-height:420px"><table id="ut">
+    <tr><th>User</th><th>Sessions</th><th>Report</th></tr>
+    {% for r in users %}<tr><td><a href="{% url 'analytics_user' r.id %}?tz={{ tzname }}">{{ r.email }}</a></td><td>{{ r.sessions }}</td>
+      <td><a href="{% url 'analytics_report_user' r.id 'xlsx' %}?tz={{ tzname }}">Excel</a> · <a href="{% url 'analytics_report_user' r.id 'pdf' %}?tz={{ tzname }}">PDF</a></td></tr>{% endfor %}
+  </table></div>
+</div>
+<script>
+document.getElementById('find').addEventListener('input', function () {
+  var q = this.value.toLowerCase();
+  document.querySelectorAll('#ut tr').forEach(function (tr, i) { if (i) tr.style.display = tr.textContent.toLowerCase().indexOf(q) < 0 ? 'none' : ''; });
+});
+</script>
+{% endblock %}

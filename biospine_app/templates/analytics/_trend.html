@@ -1,0 +1,12 @@
+{% if chart %}
+<svg viewBox="0 0 {{ chart.w }} {{ chart.h }}" class="trend" role="img" aria-label="Lean angle during the session">
+  {% for b in chart.bands %}<rect x="{{ b.x }}" y="{{ chart.band_y }}" width="{{ b.w }}" height="{{ chart.band_h }}" class="t-bad"/>{% endfor %}
+  {% for t in chart.yticks %}<line x1="{{ chart.L }}" x2="{{ chart.R }}" y1="{{ t.y }}" y2="{{ t.y }}" class="t-grid"/><text x="{{ chart.L|add:-6 }}" y="{{ t.y }}" class="t-lab" text-anchor="end" dominant-baseline="middle">{{ t.label }}</text>{% endfor %}
+  <line x1="{{ chart.L }}" x2="{{ chart.R }}" y1="{{ chart.zero_y }}" y2="{{ chart.zero_y }}" class="t-zero"/>
+  {% if chart.thr %}<line x1="{{ chart.L }}" x2="{{ chart.R }}" y1="{{ chart.thr.y_pos }}" y2="{{ chart.thr.y_pos }}" class="t-thr"/><line x1="{{ chart.L }}" x2="{{ chart.R }}" y1="{{ chart.thr.y_neg }}" y2="{{ chart.thr.y_neg }}" class="t-thr"/>{% endif %}
+  {% if chart.roll %}<polyline points="{{ chart.roll }}" class="t-roll"/>{% endif %}
+  <polyline points="{{ chart.pitch }}" class="t-pitch"/>
+  {% for t in chart.ticks %}<text x="{{ t.x }}" y="{{ chart.h|add:-8 }}" class="t-lab" text-anchor="middle">{{ t.label }}</text>{% endfor %}
+</svg>
+<div class="trend-key"><span><i class="k-pitch"></i> forward (+) / backward (−) lean</span> <span><i class="k-roll"></i> sideways: right (+) / left (−)</span> {% if chart.thr %}<span><i class="k-thr"></i> {{ chart.thr.label }}</span>{% endif %} <span><i class="k-bad"></i> time slouching</span></div>
+{% else %}<div class="note">No graph stored for this session (it was saved before graphs were added, or it was shorter than 10 seconds of data).</div>{% endif %}
